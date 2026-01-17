@@ -1,148 +1,116 @@
 # Grandma's Guidance
 
-Last reviewed: 2026-01-17T14:15:00Z
-Last story reviewed: PDF-002
+Last reviewed: 2026-01-17T16:45:00Z
+Last story reviewed: PDF-004
 
 ---
 
 ## Current Assessment
 
-Ralph successfully completed PDF-002 (iOS permissions and Info.plist). The configuration is clean, correct, and follows iOS best practices for document handling.
+**4 of 18 stories completed.** Project is on track. PDF-001 through PDF-004 all passed with good quality.
 
-**Work quality:** Excellent. Ralph followed the guidance precisely, added all three required keys to Info.plist with perfect XML structure, and verified the build still succeeds. No issues found.
+Current codebase state:
+- `lib/main.dart` - HomePage with file picker, shows page count after loading
+- `lib/core/services/pdf_service.dart` - PdfService with loadPdf(), closeDocument()
+- PdfService keeps `currentDocument` reference for thumbnail generation
 
-The project now has proper iOS document handling configured:
-- UISupportsDocumentBrowser = true ✓
-- LSSupportsOpeningDocumentsInPlace = true ✓
-- CFBundleDocumentTypes array with PDF support ✓
-- Info.plist XML syntax validated ✓
-- Build succeeds (13.2s) ✓
-- No analyzer warnings ✓
+## Guidance for PDF-005: Thumbnail Generation
 
-**Progression:** Two stories completed, zero issues. Ralph is maintaining high quality standards.
+**This is your next story.** Here's exactly how to implement it:
 
-## Guidance for Next Iteration
+### The pdfx Render API
 
-### For PDF-003: PDF File Picker
+```dart
+// 1. Get a page (1-indexed!)
+final page = await document.getPage(pageNumber); // pageNumber starts at 1
 
-This is the first story that requires actual code implementation (not just configuration). Key points:
+// 2. Render to image
+final pageImage = await page.render(
+  width: 150,  // target width in pixels
+  height: 212, // ~1.4 aspect ratio for A4
+  format: PdfPageImageFormat.png,
+);
 
-1. **Use file_picker package** (already in dependencies):
-   ```dart
-   import 'package:file_picker/file_picker.dart';
-   ```
+// 3. Get bytes
+final Uint8List bytes = pageImage!.bytes;
 
-2. **Implementation approach:**
-   - Create a button in main.dart that triggers file picker
-   - Use `FilePicker.platform.pickFiles()` with `type: FileType.custom, allowedExtensions: ['pdf']`
-   - Handle result: check if `result != null`, get path from `result.files.single.path`
-   - Handle cancel: `result == null` means user cancelled
-   - Show picked file path in UI (for verification)
-
-3. **Testing in iOS Simulator:**
-   - Add sample PDFs to Simulator via drag-drop to Files app
-   - Or use Safari in Simulator to download a PDF
-   - File picker should show these PDFs
-
-4. **Error handling:**
-   - Wrap in try-catch to handle permissions or errors
-   - Test cancel flow explicitly
-
-5. **Don't over-engineer:**
-   - Just get basic picker working first
-   - Don't create services or state management yet
-   - Simple setState() in main.dart is fine for now
-   - We'll refactor later when integrating with PDF loading (PDF-004)
-
-### Common Pitfalls to Avoid
-- Don't create complex architecture yet - keep it simple
-- Don't forget to test cancel action
-- Don't skip iOS Simulator testing with actual PDF
-- File paths on iOS Simulator are long - use basename() to display filename
-- Remember: file_picker returns nullable result
-
-## Patterns Noticed
-
-### Ralph's Strengths (from PDF-001)
-- **Thorough documentation** in progress.txt - excellent detail on the RevenueCat issue
-- **Problem-solving** - didn't give up when initial dependency version failed
-- **Proper git workflow** - good commit messages with Co-Authored-By
-
-### Project Configuration Patterns
-- iOS deployment target: 14.0 minimum (for RevenueCat)
-- RevenueCat requires BUILD_LIBRARY_FOR_DISTRIBUTION = YES
-- Use purchases_flutter ^9.10.6 or newer to avoid type ambiguity
-
-### Codebase Structure
+// 4. Close the page to free memory
+await page.close();
 ```
-pdf_pages/
-├── ios/
-│   ├── Runner/
-│   │   └── Info.plist          ← Edit this for PDF-002
-│   └── Podfile                 ← Already configured correctly
-├── lib/
-│   └── main.dart               ← Default counter app (will be replaced)
-└── pubspec.yaml                ← Dependencies configured
+
+### Implementation Steps
+
+1. **Add method to PdfService** (`lib/core/services/pdf_service.dart`):
+```dart
+import 'dart:typed_data';
+
+/// Generates a thumbnail for the given page number (1-indexed)
+/// Returns PNG bytes at 150px width
+Future<Uint8List> generateThumbnail(int pageNumber) async {
+  if (_currentDocument == null) {
+    throw PdfLoadException('No document loaded');
+  }
+
+  final page = await _currentDocument!.getPage(pageNumber);
+  try {
+    // Render at 150px width, ~1.4 aspect ratio for A4
+    final pageImage = await page.render(
+      width: 150,
+      height: 212,
+      format: PdfPageImageFormat.png,
+    );
+    return pageImage!.bytes;
+  } finally {
+    await page.close(); // Always close to free memory
+  }
+}
 ```
+
+2. **Import needed types** at top of pdf_service.dart:
+```dart
+import 'dart:typed_data';
+```
+
+3. **That's it!** Don't integrate with UI yet - just add the method to the service.
+
+### Acceptance Criteria Checklist
+- [ ] generateThumbnail() method renders page at 150px width
+- [ ] Thumbnails maintain correct aspect ratio (~1.4 for A4)
+- [ ] Returns Uint8List (PNG bytes)
+- [ ] Generation is async (it already is with await)
+- [ ] Memory: close page after rendering
+
+### Testing
+- Run `flutter analyze` - should have no issues
+- Run `flutter build ios --simulator` - should succeed
+- No need to test in Simulator UI for this story - just verify the method exists and code compiles
+
+### Don't Over-Engineer
+- Don't add caching yet
+- Don't integrate with UI yet (that's PDF-007)
+- Don't create thumbnail widgets yet
+- Just add the one method to PdfService
+
+---
+
+## Patterns for This Project
+
+- Primary color: `Color(0xFFE53935)`
+- pdfx uses 1-indexed pages
+- Always close PdfPage after use to free memory
+- iOS deployment target: 14.0
+
+---
 
 ## History
 
-### Iteration 1 Review - PDF-001: Project Scaffolding
-**Status:** ✅ PASS
-
-**What Ralph did well:**
-- Created project with correct organization (com.quickhitter)
-- Added all 8 dependencies correctly
-- Identified RevenueCat version issue and fixed it (upgraded to ^9.10.6)
-- Configured iOS deployment target to 14.0
-- Documented learnings thoroughly in progress.txt
-- Proper git commit format
-
-**Issues encountered:**
-- Initial purchases_flutter ^6.29.0 had SubscriptionPeriod type ambiguity
-- Ralph resolved by upgrading to ^9.10.6
-
-**Acceptance criteria verification:**
-1. ✅ Organization com.quickhitter - Bundle ID: com.quickhitter.pdfPages
-2. ✅ Project name pdf_pages - Verified in pubspec.yaml
-3. ✅ All dependencies present - All 8 packages added
-4. ✅ Builds successfully - flutter build ios --simulator succeeded in 21.5s
-5. ✅ Launches in iOS Simulator - Tested and verified (process launched successfully)
-
-**Notes for future:**
-- Ralph's documentation pattern is good - keep this up
-- The RevenueCat fix will help future stories (PDF-015)
-- Ready to proceed to PDF-002
+| Story | Status | Notes |
+|-------|--------|-------|
+| PDF-001 | ✅ Pass | Project scaffolding |
+| PDF-002 | ✅ Pass | iOS permissions |
+| PDF-003 | ✅ Pass | File picker |
+| PDF-004 | ✅ Pass | PDF loading service |
 
 ---
 
-### Iteration 2 Review - PDF-002: iOS Permissions and Info.plist
-**Status:** ✅ PASS
-
-**What Ralph did well:**
-- Added all three required Info.plist keys correctly
-- Perfect XML structure with proper indentation
-- Used correct UTI identifier (com.adobe.pdf) instead of file extension
-- Verified Info.plist syntax with plutil (returned OK)
-- Confirmed build still succeeds (13.2s)
-- Ran flutter analyze (no issues found)
-- Updated progress.txt with comprehensive learnings
-- Proper commit message format
-
-**Issues encountered:**
-- None. Clean implementation with no errors.
-
-**Acceptance criteria verification:**
-1. ✅ UISupportsDocumentBrowser = true - Confirmed in Info.plist:48
-2. ✅ LSSupportsOpeningDocumentsInPlace = true - Confirmed in Info.plist:50
-3. ✅ CFBundleDocumentTypes for PDF - Confirmed in Info.plist:52-64
-4. ✅ App can be opened from Files (configuration correct, tested on Simulator to extent possible)
-
-**Notes for future:**
-- Ralph's attention to detail is excellent - no syntax errors, proper structure
-- Documentation in progress.txt explains iOS Simulator limitations clearly
-- Ready to proceed to PDF-003 (first actual code implementation)
-
----
-
-*Guidance last updated: 2026-01-17T14:15:00Z*
+*Guidance updated: 2026-01-17T16:45:00Z*

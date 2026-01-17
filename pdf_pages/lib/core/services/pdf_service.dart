@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:pdfx/pdfx.dart';
 
 /// Service for loading and managing PDF documents
@@ -56,6 +58,28 @@ class PdfService {
 
   /// Returns true if a document is currently loaded
   bool get hasDocument => _currentDocument != null;
+
+  /// Generates a thumbnail for the given page number (1-indexed)
+  /// Returns PNG bytes at 150px width
+  /// Throws [PdfLoadException] if no document is loaded
+  Future<Uint8List> generateThumbnail(int pageNumber) async {
+    if (_currentDocument == null) {
+      throw PdfLoadException('No document loaded');
+    }
+
+    final page = await _currentDocument!.getPage(pageNumber);
+    try {
+      // Render at 150px width, ~1.4 aspect ratio for A4
+      final pageImage = await page.render(
+        width: 150,
+        height: 212,
+        format: PdfPageImageFormat.png,
+      );
+      return pageImage!.bytes;
+    } finally {
+      await page.close(); // Always close to free memory
+    }
+  }
 }
 
 /// Exception thrown when a PDF cannot be loaded

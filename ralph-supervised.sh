@@ -33,6 +33,60 @@ BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
 NC='\033[0m' # No Color
 
+# Error handling configuration
+MAX_RETRIES=3
+RETRY_DELAY=5
+
+# Function to run Claude with retry logic (no timeout - Claude CLI handles its own timeouts)
+run_claude_with_retry() {
+  local prompt="$1"
+  local description="$2"
+  local retries=0
+  local output=""
+  local exit_code=0
+
+  while [ $retries -lt $MAX_RETRIES ]; do
+    echo -e "${BLUE}  Attempt $((retries + 1)) of $MAX_RETRIES for $description...${NC}"
+
+    # Run Claude and capture output
+    output=$(claude --model sonnet --dangerously-skip-permissions --print "$prompt" 2>&1 | tee /dev/stderr)
+    exit_code=$?
+
+    # Check for API/CLI errors in output
+    if echo "$output" | grep -qE "(Error:|error originated|No messages returned|ETIMEDOUT|ECONNRESET|ECONNREFUSED|socket hang up)"; then
+      echo -e "${YELLOW}  API error detected, retrying in ${RETRY_DELAY}s...${NC}"
+      retries=$((retries + 1))
+      sleep $RETRY_DELAY
+      continue
+    fi
+
+    # Check if Claude CLI returned non-zero exit code
+    if [ $exit_code -ne 0 ]; then
+      echo -e "${YELLOW}  Claude exited with code $exit_code, retrying in ${RETRY_DELAY}s...${NC}"
+      retries=$((retries + 1))
+      sleep $RETRY_DELAY
+      continue
+    fi
+
+    # Check if output is empty or too short (likely a failure)
+    if [ ${#output} -lt 100 ]; then
+      echo -e "${YELLOW}  Output too short (${#output} chars), retrying in ${RETRY_DELAY}s...${NC}"
+      retries=$((retries + 1))
+      sleep $RETRY_DELAY
+      continue
+    fi
+
+    # Success - return the output
+    echo "$output"
+    return 0
+  done
+
+  # All retries failed
+  echo -e "${RED}  All $MAX_RETRIES attempts failed for $description${NC}"
+  echo "ERROR: All retries exhausted"
+  return 1
+}
+
 # Archive previous run if branch changed
 if [ -f "$PRD_FILE" ] && [ -f "$LAST_BRANCH_FILE" ]; then
   CURRENT_BRANCH=$(jq -r '.branchName // empty' "$PRD_FILE" 2>/dev/null || echo "")
@@ -103,9 +157,22 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   # Read the prompt file
   RALPH_PROMPT=$(cat "$SCRIPT_DIR/prompt-supervised.md")
 
-  # Ralph does his work
+  # Ralph does his work with retry logic
   echo -e "${GREEN}Ralph is working...${NC}"
-  RALPH_OUTPUT=$(claude --model sonnet --dangerously-skip-permissions --print "$RALPH_PROMPT" 2>&1 | tee /dev/stderr) || true
+  RALPH_OUTPUT=$(run_claude_with_retry "$RALPH_PROMPT" "Ralph iteration $i")
+  RALPH_EXIT_CODE=$?
+
+  # Check if Ralph failed after all retries
+  if [ $RALPH_EXIT_CODE -ne 0 ] || echo "$RALPH_OUTPUT" | grep -q "ERROR: All retries exhausted"; then
+    echo ""
+    echo -e "${RED}════════════════════════════════════════════════════════${NC}"
+    echo -e "${RED}  Ralph failed after $MAX_RETRIES retries!${NC}"
+    echo -e "${RED}  Iteration $i - Pausing for human intervention.${NC}"
+    echo -e "${RED}════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo "$(date): Iteration $i failed - Claude API errors after $MAX_RETRIES retries" >> "$GUIDANCE_FILE"
+    exit 1
+  fi
 
   # Check if Ralph says all done
   if echo "$RALPH_OUTPUT" | grep -q "<promise>COMPLETE</promise>"; then
@@ -122,9 +189,22 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   echo -e "${YELLOW}  Grandma is reviewing iteration $i...${NC}"
   echo -e "${YELLOW}───────────────────────────────────────────────────────────${NC}"
 
-  # Grandma reviews
+  # Grandma reviews with retry logic
   GRANDMA_PROMPT=$(cat "$SCRIPT_DIR/grandma-review.md")
-  GRANDMA_OUTPUT=$(claude --model sonnet --dangerously-skip-permissions --print "$GRANDMA_PROMPT" 2>&1 | tee /dev/stderr) || true
+  GRANDMA_OUTPUT=$(run_claude_with_retry "$GRANDMA_PROMPT" "Grandma review $i")
+  GRANDMA_EXIT_CODE=$?
+
+  # Check if Grandma failed after all retries
+  if [ $GRANDMA_EXIT_CODE -ne 0 ] || echo "$GRANDMA_OUTPUT" | grep -q "ERROR: All retries exhausted"; then
+    echo ""
+    echo -e "${RED}════════════════════════════════════════════════════════${NC}"
+    echo -e "${RED}  Grandma review failed after $MAX_RETRIES retries!${NC}"
+    echo -e "${RED}  Iteration $i - Pausing for human intervention.${NC}"
+    echo -e "${RED}════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo "$(date): Grandma review $i failed - Claude API errors after $MAX_RETRIES retries" >> "$GUIDANCE_FILE"
+    exit 1
+  fi
 
   # Check if Grandma says to pause
   if echo "$GRANDMA_OUTPUT" | grep -q "<grandma>PAUSE</grandma>"; then
@@ -140,6 +220,10 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   # Check if Grandma says things look good
   if echo "$GRANDMA_OUTPUT" | grep -q "<grandma>CONTINUE</grandma>"; then
     echo -e "${GREEN}Grandma approves. Continuing...${NC}"
+  elif ! echo "$GRANDMA_OUTPUT" | grep -q "<grandma>PAUSE</grandma>"; then
+    # Grandma didn't give a clear signal - treat as warning but continue
+    echo -e "${YELLOW}  Warning: Grandma didn't give clear CONTINUE/PAUSE signal${NC}"
+    echo -e "${YELLOW}  Continuing anyway, but this may indicate an issue...${NC}"
   fi
 
   echo ""

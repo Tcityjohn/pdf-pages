@@ -88,7 +88,7 @@
       ],
       "priority": 5,
       "complexity": "medium",
-      "passes": false,
+      "passes": true,
       "notes": "iOS Simulator performance may be slower than device. Use ~1.4 aspect ratio for A4 pages."
     },
     {
