@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/pdf_service.dart';
 import '../../../providers/selection_provider.dart';
 import '../widgets/range_dialog.dart';
+import '../widgets/export_sheet.dart';
 
 /// Screen that displays PDF pages in a 3-column grid with thumbnails
 /// Users can view all pages from the loaded PDF document
@@ -30,6 +31,9 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
 
   // Track which thumbnails are currently loading
   final Set<int> _loadingThumbnails = {};
+
+  // Track extraction state
+  bool _isExtracting = false;
 
   @override
   void initState() {
@@ -105,6 +109,67 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
           },
         );
       },
+    );
+  }
+
+  /// Extract selected pages to new PDF
+  Future<void> _extractPages() async {
+    final selectedPages = ref.read(selectedPagesProvider);
+    if (selectedPages.isEmpty) return;
+
+    setState(() => _isExtracting = true);
+
+    try {
+      final extractedPath = await widget.pdfService.extractPages(
+        selectedPages,
+        onProgress: (current, total) {
+          // Progress callback - could show progress dialog in future
+          debugPrint('Extracting page $current of $total');
+        },
+      );
+
+      if (mounted) {
+        setState(() => _isExtracting = false);
+        await _showExportSheet(extractedPath);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isExtracting = false);
+        // Show error dialog
+        showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Export Error'),
+            content: Text('Failed to create PDF: ${e.toString()}'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
+
+  /// Show the export bottom sheet after successful extraction
+  Future<void> _showExportSheet(String extractedFilePath) async {
+    final selectedPages = ref.read(selectedPagesProvider);
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      isDismissible: false, // Require user to explicitly choose an action
+      enableDrag: false, // Disable drag to dismiss
+      builder: (context) => ExportSheet(
+        extractedFilePath: extractedFilePath,
+        selectedPages: selectedPages,
+        onDone: () {
+          // Optional callback when done is pressed
+          debugPrint('Export sheet dismissed');
+        },
+      ),
     );
   }
 
@@ -264,6 +329,37 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
                     minHeight: 36,
                   ),
                   tooltip: 'Invert selection',
+                ),
+
+                const SizedBox(width: 8),
+
+                // Extract button
+                Consumer(
+                  builder: (context, ref, child) {
+                    final selectedPages = ref.watch(selectedPagesProvider);
+                    return FilledButton.icon(
+                      onPressed: selectedPages.isNotEmpty && !_isExtracting
+                          ? _extractPages
+                          : null,
+                      icon: _isExtracting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Icon(Icons.file_download),
+                      label: Text(_isExtracting ? 'Extracting...' : 'Extract'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFE53935), // Primary color
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        minimumSize: const Size(0, 36),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
