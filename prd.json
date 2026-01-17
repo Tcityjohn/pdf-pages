@@ -177,7 +177,7 @@
       ],
       "priority": 10,
       "complexity": "low",
-      "passes": false,
+      "passes": true,
       "notes": "Icons: select_all, deselect, flip. Use IconButton with tooltips."
     },
     {
