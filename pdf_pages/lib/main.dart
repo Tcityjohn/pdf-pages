@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
+import 'core/services/pdf_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -30,15 +31,18 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final PdfService _pdfService = PdfService();
   String? _selectedFilePath;
   String? _selectedFileName;
   String? _errorMessage;
   bool _isPickingFile = false;
+  int? _pageCount;
 
   Future<void> _pickPdfFile() async {
     setState(() {
       _isPickingFile = true;
       _errorMessage = null;
+      _pageCount = null;
     });
 
     try {
@@ -48,27 +52,55 @@ class _HomePageState extends State<HomePage> {
         allowedExtensions: ['pdf'],
       );
 
-      setState(() {
-        _isPickingFile = false;
+      if (result != null && result.files.single.path != null) {
+        // User selected a file
+        final filePath = result.files.single.path!;
+        final fileName = path.basename(filePath);
 
-        if (result != null && result.files.single.path != null) {
-          // User selected a file
-          _selectedFilePath = result.files.single.path;
-          _selectedFileName = path.basename(_selectedFilePath!);
-        } else {
-          // User cancelled
+        // Try to load the PDF
+        try {
+          final pageCount = await _pdfService.loadPdf(filePath);
+
+          setState(() {
+            _isPickingFile = false;
+            _selectedFilePath = filePath;
+            _selectedFileName = fileName;
+            _pageCount = pageCount;
+          });
+        } on PdfLoadException catch (e) {
+          setState(() {
+            _isPickingFile = false;
+            _errorMessage = e.toString();
+            _selectedFilePath = null;
+            _selectedFileName = null;
+            _pageCount = null;
+          });
+        }
+      } else {
+        // User cancelled
+        setState(() {
+          _isPickingFile = false;
           _selectedFilePath = null;
           _selectedFileName = null;
-        }
-      });
+          _pageCount = null;
+        });
+      }
     } catch (e) {
       setState(() {
         _isPickingFile = false;
         _errorMessage = 'Error picking file: ${e.toString()}';
         _selectedFilePath = null;
         _selectedFileName = null;
+        _pageCount = null;
       });
     }
+  }
+
+  @override
+  void dispose() {
+    // Close document when widget is disposed
+    _pdfService.closeDocument();
+    super.dispose();
   }
 
   @override
@@ -140,7 +172,7 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 24),
 
-              // Display selected file
+              // Display selected file and page count
               if (_selectedFileName != null)
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -176,6 +208,38 @@ class _HomePageState extends State<HomePage> {
                         overflow: TextOverflow.ellipsis,
                         maxLines: 2,
                       ),
+                      if (_pageCount != null) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE53935).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.description,
+                                size: 16,
+                                color: Color(0xFFE53935),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '$_pageCount ${_pageCount == 1 ? 'page' : 'pages'}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFE53935),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
