@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'core/services/pdf_service.dart';
+import 'features/extractor/presentation/screens/page_grid_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -50,16 +51,28 @@ class _HomePageState extends State<HomePage> {
       if (result != null && result.files.single.path != null) {
         // User selected a file
         final filePath = result.files.single.path!;
+        final fileName = result.files.single.name;
 
         // Try to load the PDF
         try {
-          await _pdfService.loadPdf(filePath);
+          final pageCount = await _pdfService.loadPdf(filePath);
 
           setState(() {
             _isPickingFile = false;
           });
 
-          // TODO: Navigate to page grid screen (PDF-007)
+          // Navigate to page grid screen
+          if (mounted) {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => PageGridScreen(
+                  pdfService: _pdfService,
+                  documentName: fileName,
+                  pageCount: pageCount,
+                ),
+              ),
+            );
+          }
         } on PdfLoadException catch (e) {
           setState(() {
             _isPickingFile = false;
