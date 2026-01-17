@@ -168,3 +168,40 @@ Created `PdfService` in `lib/core/services/pdf_service.dart`. Loads PDFs, return
   - Layout is fully responsive using Spacer, Expanded, and relative sizing
 
 ---
+
+## 2026-01-17T18:45:00Z - PDF-009: Range Selection Dialog
+- Implemented range selection dialog functionality
+- Created RangeSelectionDialog widget in `lib/features/extractor/presentation/widgets/range_dialog.dart`
+- Added `_showRangeDialog()` method in `PageGridScreen` to display the dialog
+- Range parser handles formats: single pages (8), ranges (1-5), comma-separated (1-5, 8, 11-15)
+- Dialog UI matches mockup specifications exactly:
+  - Title: "Select Pages"
+  - Subtitle: "Enter page numbers or ranges:"
+  - Input placeholder: "e.g., 1-5, 8, 11-15"
+  - Helper text shows total page count
+  - Cancel (text) and Select (filled) buttons
+  - 28px dialog border radius, 12px input border radius
+- Error validation shows clear messages for invalid inputs
+- Uses `setSelection()` method to replace current selection
+- Integrates with existing filter icon button in selection bar
+- Passes all acceptance criteria:
+  - UI matches mockup ✅
+  - Dialog opens from filter icon ✅
+  - Text input format handled correctly ✅
+  - Parser handles all cases ✅
+  - Error messages shown ✅
+  - Selection replacement works ✅
+  - Cancel functionality works ✅
+- Quality checks passed:
+  - `flutter analyze` - No issues found
+  - `flutter build ios --simulator` - Build succeeded
+
+**Learnings for future iterations:**
+- RangeSelectionDialog widget is fully reusable with pageCount parameter
+- Parser uses FormatException for clear error messaging
+- Dialog follows Material 3 design with proper padding and styling
+- setSelection() method in provider enables complete selection replacement
+- Input validation happens on every text change for real-time feedback
+- Filter icon integration was straightforward with existing button placeholder
+
+---

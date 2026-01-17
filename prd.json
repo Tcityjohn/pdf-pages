@@ -160,7 +160,7 @@
       ],
       "priority": 9,
       "complexity": "medium",
-      "passes": false,
+      "passes": true,
       "notes": "User enters 1-indexed pages, convert to 0-indexed internally."
     },
     {

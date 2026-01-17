@@ -211,7 +211,60 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
                   tooltip: 'Select page range',
                 ),
 
-                // TODO: Selection control buttons will be added in PDF-010
+                // Selection control buttons
+                const SizedBox(width: 4),
+
+                // Select All button
+                IconButton(
+                  onPressed: () {
+                    ref.read(selectedPagesProvider.notifier).selectAll(widget.pageCount);
+                  },
+                  icon: const Icon(Icons.select_all),
+                  iconSize: 20,
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  tooltip: 'Select all pages',
+                ),
+
+                // Clear selection button
+                Consumer(
+                  builder: (context, ref, child) {
+                    final selectedPages = ref.watch(selectedPagesProvider);
+                    return IconButton(
+                      onPressed: selectedPages.isNotEmpty
+                        ? () {
+                            ref.read(selectedPagesProvider.notifier).clearSelection();
+                          }
+                        : null, // Disabled when no selection
+                      icon: const Icon(Icons.deselect),
+                      iconSize: 20,
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                      tooltip: 'Clear selection',
+                    );
+                  },
+                ),
+
+                // Invert selection button
+                IconButton(
+                  onPressed: () {
+                    ref.read(selectedPagesProvider.notifier).invertSelection(widget.pageCount);
+                  },
+                  icon: const Icon(Icons.flip_to_back),
+                  iconSize: 20,
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  tooltip: 'Invert selection',
+                ),
               ],
             ),
           ),
