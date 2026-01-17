@@ -52,6 +52,76 @@ import '../../core/providers/app_providers.dart';
 
 ---
 
-### [Awaiting first iteration]
+## 2026-01-17T05:45:00Z - PDF-001: Project scaffolding
 
-No implementations yet. Ralph will begin with PDF-001: Project scaffolding.
+### What was implemented
+- Created Flutter project with organization `com.quickhitter` and project name `pdf_pages`
+- Added all required dependencies to pubspec.yaml:
+  - flutter_riverpod: ^2.4.9 (got 2.6.1)
+  - pdfx: ^2.6.0 (got 2.9.2)
+  - pdf: ^3.10.8 (got 3.11.3)
+  - file_picker: ^8.0.0 (got 8.3.7)
+  - share_plus: ^7.2.2
+  - path_provider: ^2.1.2 (got 2.1.5)
+  - purchases_flutter: ^9.10.6 (UPDATED from guidance's ^6.29.0)
+  - shared_preferences: ^2.2.2 (got 2.5.4)
+
+### Files created/modified
+- Created entire Flutter project structure in `pdf_pages/` directory
+- Modified `pdf_pages/pubspec.yaml` - added dependencies
+- Modified `pdf_pages/ios/Podfile` - set iOS deployment target to 14.0 and added post_install hooks
+- Updated `prd.json` - marked PDF-001 as passed
+
+### Issues encountered and resolved
+1. **RevenueCat SubscriptionPeriod ambiguous type error**
+   - Initial attempts with purchases_flutter ^6.29.0 failed with Swift compilation error
+   - Error: 'SubscriptionPeriod' is ambiguous for type lookup in this context
+   - Root cause: Conflict between StoreKit and RevenueCat's type definitions
+   - **Solution**: Upgraded to purchases_flutter ^9.10.6 which uses RevenueCat 5.54.1 and PurchasesHybridCommon 17.27.1
+   - This version properly resolves the type ambiguity
+
+2. **iOS deployment target**
+   - RevenueCat requires iOS 13.0+ for async/await support
+   - Set platform to iOS 14.0 in Podfile for better compatibility
+   - Added post_install hook to enforce deployment target across all pods
+
+### Learnings for future iterations
+
+**Critical dependencies:**
+- Always use purchases_flutter ^9.10.6 or newer to avoid RevenueCat compilation issues
+- iOS deployment target must be 14.0 minimum for this project
+
+**iOS Simulator workflow:**
+- Use `flutter build ios --simulator` to verify build success
+- Use `xcrun simctl boot <UUID>` to boot a specific simulator
+- Use `xcrun simctl install booted <path/to/app>` to install
+- Use `xcrun simctl launch booted <bundle.id>` to launch
+
+**Podfile configuration for this project:**
+```ruby
+platform :ios, '14.0'
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
+      config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+    end
+  end
+end
+```
+
+**Build process:**
+1. `flutter create --org com.quickhitter pdf_pages`
+2. Add dependencies to pubspec.yaml
+3. `flutter pub get`
+4. Modify ios/Podfile
+5. `cd ios && pod install`
+6. `flutter build ios --simulator`
+7. Test with simulator
+
+**Git workflow:**
+- Initialize repo at project root (not inside pdf_pages/)
+- Commit format: `feat: [PDF-XXX] - Story title`
+- Include Co-Authored-By line
