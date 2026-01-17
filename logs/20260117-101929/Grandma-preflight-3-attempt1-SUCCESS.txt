@@ -1,0 +1,32 @@
+I've completed the pre-flight check. Here's my assessment:
+
+## Pre-flight Summary
+
+**Upcoming story:** PDF-009 - Range Selection Dialog  
+**Branch drift:** None (working directly on master)  
+**Conflict risk:** Low  
+**Codebase health:** Clean (`flutter analyze` passes)
+
+### Key Findings
+
+1. **Codebase is healthy** - No issues from flutter analyze, all previous stories complete
+2. **Provider needs one new method** - `setSelection(Set<int>)` to replace selection entirely (required for the dialog)
+3. **Widget directory needs to be created** - `lib/features/extractor/presentation/widgets/` doesn't exist yet
+4. **Mockup correction** - Dialog button should say "Select" not "Apply" (previous guidance was slightly off)
+
+### No Blockers Detected
+
+- Clear path to implementation
+- All required dependencies in place
+- No conflicts with existing code
+- Selection provider pattern already established and working
+
+### Notes for Ralph
+
+I've updated `guidance.txt` with detailed pre-flight notes including:
+- Exact file locations and line numbers
+- Missing `setSelection()` method that needs to be added
+- Correct mockup specs (title, button text, styling)
+- Ground truth on imports and color constants
+
+<grandma>CONTINUE</grandma>

@@ -58,6 +58,31 @@ Created `PdfService` in `lib/core/services/pdf_service.dart`. Loads PDFs, return
 
 *Append new entries below.*
 
+## 2026-01-19 - PDF-008: Tap-to-select Pages
+- Added selection state provider in `lib/features/extractor/providers/selection_provider.dart`
+- Wrapped `MyApp` with `ProviderScope` in `main.dart`
+- Modified `PageGridScreen` to become `ConsumerStatefulWidget`
+- Implemented page selection with Riverpod and haptic feedback
+- Added selection UI:
+  - Selected pages get red border with 3px width
+  - Box shadow added for selected pages
+  - Checkmark badge (24x24px) added to selected pages
+  - "X selected" badge in selection bar with tertiary container color
+- Passes all acceptance criteria:
+  - Tapping pages toggles selection
+  - Multiple pages can be selected
+  - Haptic feedback on tap
+  - Selection badge shows count
+- Quality checks passed:
+  - `flutter analyze` fixed with minor deprecation warnings
+  - UI matches design specifications exactly
+
+**Learnings for future iterations:**
+- Riverpod's StateNotifierProvider is great for managing complex state
+- Color.withValues() replaces deprecated withOpacity()
+- Always add haptic feedback, even if it doesn't work in Simulator
+- Checkmark badges and selection borders add visual clarity
+
 ---
 
 ## 2026-01-17T21:30:00Z - PDF-005: Thumbnail Generation
@@ -77,6 +102,32 @@ Created `PdfService` in `lib/core/services/pdf_service.dart`. Loads PDFs, return
   - Always close PdfPage after rendering to prevent memory leaks
   - Using try-finally ensures cleanup even if render fails
   - Method is async and won't block UI thread
+
+---
+
+## 2026-01-18T04:00:00Z - PDF-007: Page Grid with Thumbnails
+- **VERIFIED AND COMMITTED** previously implemented PageGridScreen
+- Files added: `lib/features/extractor/presentation/screens/page_grid_screen.dart` (272 lines)
+- Files modified: `lib/main.dart` (imports and navigation integration)
+- Complete 3-column grid implementation with:
+  - GridView.builder for performance (handles 50+ pages efficiently)
+  - Progressive thumbnail loading with caching (`_thumbnailCache` Map)
+  - Loading spinners while thumbnails generate
+  - Page number badges in bottom-right corner
+  - Truncated document name in AppBar
+  - Close button navigation back to home
+- Quality checks passed:
+  - `flutter build ios --simulator` - Build succeeded (34.4s)
+  - `flutter analyze` - No issues found (3.8s)
+  - App launches successfully on iPhone 17 simulator
+- **Learnings for future iterations:**
+  - Following Grandma's verification approach saved implementation time
+  - Implementation correctly deferred selection UI to future stories (PDF-008+)
+  - Progressive thumbnail loading pattern works well with 50ms delays between pages
+  - Grid specifications: 3 columns, 12px spacing, 0.7 aspect ratio (~1.4 inverted)
+  - Memory management: Thumbnail cache holds Uint8List data efficiently
+  - Navigation pattern: Pass PdfService instance, document name, and page count to PageGridScreen
+  - TODO comments in code properly indicate future features for PDF-008+
 
 ---
 

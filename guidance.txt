@@ -1,112 +1,212 @@
 # Grandma's Guidance
 
-Last reviewed: 2026-01-17T22:00:00Z
-Last story reviewed: PDF-005
+Last reviewed: 2026-01-17T18:45:00Z
+Last story reviewed: PDF-008
+
+---
+
+## Pre-flight Notes (Iteration 9)
+**Upcoming story:** PDF-009 - Range Selection Dialog
+**Branch drift:** None - working on master branch (no feature branch divergence)
+**Conflict risk:** Low
+
+### Key Files Ralph Should Know About
+
+1. **`pdf_pages/lib/features/providers/selection_provider.dart`** (38 lines)
+   - Current state: Has `togglePage()`, `clearSelection()`, `selectAll()`, `invertSelection()` methods
+   - **MISSING:** Need to add `setSelection(Set<int>)` method for replacing selection entirely
+   - Uses StateNotifierProvider pattern correctly
+   - 1-indexed page numbers
+
+2. **`pdf_pages/lib/features/extractor/presentation/screens/page_grid_screen.dart`** (347 lines)
+   - Selection bar at line 126-186 with badges and Spacer
+   - TODO comment at line 183: "Selection control buttons will be added in PDF-009 and PDF-010"
+   - This is where Ralph needs to add the filter/range icon button
+   - File already imports selection_provider correctly
+
+3. **`mockups/03-range-dialog.html`** - Dialog design spec
+   - Title: "Select Pages" (not "Select Page Range")
+   - Subtitle: "Enter page numbers or ranges:"
+   - Placeholder: "e.g., 1-5, 8, 11-15"
+   - Helper text: "Total pages: 24" (shows total page count)
+   - Buttons: "Cancel" (text) and "Select" (filled) - NOT "Apply"
+   - Dialog has rounded corners (28px border-radius)
+   - Input field has 12px border-radius, 1px outline border
+
+### Warnings for This Story
+
+1. **Dialog button text mismatch:** Previous guidance says "Apply" but mockup shows "Select"
+2. **Add `setSelection()` method first** - Dialog needs this to replace current selection
+3. **Don't modify togglePage logic** - It's working, just add the new method
+4. **Create new widgets directory** - `lib/features/extractor/presentation/widgets/` doesn't exist yet
+5. **Pass pageCount to dialog** - Needed for validation AND for helper text display
+
+### Ground Truth Summary
+
+- **SelectedPagesNotifier state:** `Set<int>` (1-indexed page numbers)
+- **Provider location:** `lib/features/providers/selection_provider.dart` (NOT `lib/features/extractor/providers/`)
+- **Import path in page_grid_screen:** `../../../providers/selection_provider.dart`
+- **Dialog styling:** Material 3 with 28px dialog radius, 12px input radius, 20px button radius
+- **Color constants:** Primary #E53935, Primary Container #FFCDD2, Outline #E0E0E0
+
+### Codebase Health Check
+- `flutter analyze`: No issues found ✅
+- All 8 previous stories pass ✅
+- No uncommitted breaking changes ✅
 
 ---
 
 ## Current Assessment
 
-**5 of 18 stories completed.** Project continues on excellent trajectory. PDF-005 (Thumbnail Generation) passes all acceptance criteria with clean implementation.
+**8 of 18 stories completed.** PDF-008 (Tap-to-select Pages) PASSES all acceptance criteria. Project continues on excellent trajectory.
 
-Ralph's work quality remains high:
-- Precise implementation following guidance
-- Proper memory management (try-finally for page cleanup)
-- Correct use of pdfx API (1-indexed pages, PdfPageImageFormat enum)
-- Clean code with no analyzer warnings
-- Fast build time (7.2s)
+Ralph's work on PDF-008 is solid:
+- Correctly added `ProviderScope` wrapper in main.dart
+- Changed `PageGridScreen` to `ConsumerStatefulWidget` (correctly - not just ConsumerWidget)
+- Created `SelectedPagesNotifier` with StateNotifier pattern
+- Selection toggle works with haptic feedback
+- Visual indicators match mockup spec:
+  - Red border (#E53935, 3px) for selected pages
+  - Box shadow with 0.3 opacity on selected pages
+  - Checkmark badge (24x24px, top-left, primary color background, white check icon)
+  - "X selected" badge in tertiary container (#E3F2FD) with dark blue text (#1565C0)
+- TODO comments properly preserved for PDF-009/010 (selection controls)
+- Uses 1-indexed page numbers (matching pdfx convention)
 
-Current codebase state:
-- `lib/main.dart` - HomePage with file picker, shows page count after loading
-- `lib/core/services/pdf_service.dart` - PdfService with loadPdf(), generateThumbnail(), closeDocument()
-- PdfService keeps `currentDocument` reference for thumbnail generation
-- Thumbnail generation ready for UI integration (PDF-007)
+**Code quality:**
+- `flutter analyze`: No issues
+- `flutter build ios --simulator`: Build succeeded
+- Provider correctly uses StateNotifierProvider pattern
+- Correct use of `ref.watch()` for reactive UI updates and `ref.read()` for actions
 
-## Guidance for PDF-006: Home Screen UI
+**Minor observations (non-blocking):**
+1. Provider file location: `lib/features/providers/` vs suggested `lib/features/extractor/providers/` - works fine, just a structural preference
+2. Duplicate `selection_provider.dart` file at `/lib/features/extractor/providers/` (outside pdf_pages) - this is leftover cruft that should be cleaned up eventually
+3. The `togglePage` method works but could be slightly more idiomatic (mutate then reassign rather than reassign then mutate)
 
-**This is your next story.** Build the home screen that matches the mockup.
+## Guidance for PDF-009: Range Selection Dialog
+
+**This is the next story.** Implement dialog to select pages by entering ranges like "1-5, 8, 11-15".
 
 ### Implementation Approach
 
-1. **Read the mockup first:**
-   - Open `./mockups/01-home-screen.html` in a browser to see the target design
-   - Note exact colors, spacing, icon sizes, typography
+1. **Create the dialog widget:**
+   - New file: `lib/features/extractor/presentation/widgets/range_dialog.dart`
+   - Modal dialog with text input
+   - Match UI from `mockups/03-range-dialog.html`
 
-2. **Create the UI in main.dart:**
-   - Replace the current simple UI with the full home screen design
-   - Use Material 3 components (ElevatedButton, Card, etc.)
-   - Match all design specifications exactly
+2. **Add range parser:**
+   - Parse format: "1-5, 8, 11-15"
+   - Handle: single pages, ranges, comma-separated combinations
+   - Validate: check ranges are within 1..pageCount
+   - Convert to Set<int> for provider
 
-### Design Specifications
+3. **Integrate with selection bar:**
+   - Add filter icon button (see mockup - it's the first icon after badges)
+   - Open dialog when tapped
+   - On confirm, replace current selection with parsed pages
 
-**Colors:**
-- Primary: `Color(0xFFE53935)` (red)
-- Primary container: `Color(0xFFFFCDD2)` (light red)
-- Background: White
-- Text: Dark grey/black
+### Design Specifications from Mockup
 
-**Layout:**
-- Centered content
-- PDF icon in colored circle at top
-- Title: "Extract PDF Pages" (large, bold)
-- Subtitle: Explanation text (regular weight)
-- Privacy badge with lock icon
-- Select PDF button with folder icon at bottom
-- Settings gear icon in app bar (top right)
+Looking at `mockups/03-range-dialog.html` (if exists, otherwise infer from pattern):
 
-**Spacing:**
-- Use 12px grid for padding and margins
-- 8px or 12px border radius on buttons/cards
-- Consistent vertical spacing between elements
+```dart
+// Dialog styling
+showDialog(
+  builder: (context) => AlertDialog(
+    title: Text('Select Page Range'),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('Enter pages (e.g., 1-5, 8, 11-15)'),
+        TextField(
+          decoration: InputDecoration(
+            hintText: '1-5, 8, 11-15',
+            errorText: isValid ? null : 'Invalid range',
+          ),
+        ),
+      ],
+    ),
+    actions: [
+      TextButton(onPressed: cancel, child: Text('Cancel')),
+      FilledButton(onPressed: apply, child: Text('Apply')),
+    ],
+  ),
+);
+```
 
-**Icons:**
-- PDF icon: `Icons.picture_as_pdf`
-- Lock icon: `Icons.lock_outline`
-- Folder icon: `Icons.folder_open`
-- Settings icon: `Icons.settings`
+### Range Parser Logic
 
-### Testing Requirements
+```dart
+Set<int> parsePageRange(String input, int maxPages) {
+  final result = <int>{};
 
-Test on these iOS Simulator devices:
-- iPhone SE (3rd gen) - smallest screen
-- iPhone 15 - standard size
-- iPhone 15 Pro Max - largest screen
+  // Split by comma
+  final parts = input.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty);
 
-Verify:
-- Layout doesn't overflow on small screens
-- Text is readable
-- Buttons are tappable
-- Spacing looks balanced
-- Colors match mockup exactly
+  for (final part in parts) {
+    if (part.contains('-')) {
+      // Range: "1-5"
+      final rangeParts = part.split('-');
+      if (rangeParts.length == 2) {
+        final start = int.tryParse(rangeParts[0].trim());
+        final end = int.tryParse(rangeParts[1].trim());
+        if (start != null && end != null && start <= end) {
+          for (int i = start; i <= end; i++) {
+            if (i >= 1 && i <= maxPages) result.add(i);
+          }
+        }
+      }
+    } else {
+      // Single page: "8"
+      final page = int.tryParse(part);
+      if (page != null && page >= 1 && page <= maxPages) {
+        result.add(page);
+      }
+    }
+  }
 
-### Don't Over-Engineer
+  return result;
+}
+```
 
-- Don't add functionality yet - just the UI
-- File picker integration already exists - keep it
-- Settings icon doesn't need to navigate anywhere yet (PDF-017)
-- Focus on matching the mockup pixel-perfect
+### Key Files to Modify
+
+1. **NEW: lib/features/extractor/presentation/widgets/range_dialog.dart** - Dialog widget
+2. **lib/features/extractor/presentation/screens/page_grid_screen.dart** - Add filter icon button
+3. **lib/features/providers/selection_provider.dart** - Add `setSelection(Set<int>)` method
 
 ### Acceptance Criteria Checklist
 
-- [ ] UI matches mockups/01-home-screen.html
-- [ ] PDF icon displayed in colored circle
-- [ ] Title: 'Extract PDF Pages'
-- [ ] Subtitle explaining the feature
-- [ ] Privacy badge with lock icon
-- [ ] Select PDF button with folder icon
-- [ ] Settings gear icon in app bar
-- [ ] Responsive layout works on different iOS device sizes
+- [ ] UI matches mockups/03-range-dialog.html
+- [ ] Dialog opens from filter icon in selection bar
+- [ ] Text input accepts format: '1-5, 8, 11-15'
+- [ ] Parser handles: single pages, ranges, comma-separated
+- [ ] Invalid input shows error message
+- [ ] Parsed pages replace current selection
+- [ ] Cancel closes without changes
+
+### Watch Out For
+
+1. **Validation edge cases:**
+   - Empty input
+   - Reversed ranges (5-1)
+   - Out of bounds (0, negative, > pageCount)
+   - Non-numeric input
+2. **Add `setSelection` method to provider** - for replacing selection entirely
+3. **Pass pageCount to dialog** - needed for validation
 
 ---
 
 ## Patterns for This Project
 
-- Primary color: `Color(0xFFE53935)`
+- Primary color: `Color(0xFFE53935)` (red)
+- Tertiary container: `Color(0xFFE3F2FD)` (light blue)
 - pdfx uses 1-indexed pages
-- Always close PdfPage after use to free memory
+- 12px spacing grid, 8px border radius on thumbnails
 - iOS deployment target: 14.0
 - Use Material 3 components
-- 12px spacing grid, 8px/12px border radius
+- Provider files go in `lib/features/providers/`
 
 ---
 
@@ -114,48 +214,49 @@ Verify:
 
 | Story | Status | Notes |
 |-------|--------|-------|
-| PDF-001 | ✅ Pass | Project scaffolding |
-| PDF-002 | ✅ Pass | iOS permissions |
-| PDF-003 | ✅ Pass | File picker |
-| PDF-004 | ✅ Pass | PDF loading service |
-| PDF-005 | ✅ Pass | Thumbnail generation |
+| PDF-001 | Pass | Project scaffolding |
+| PDF-002 | Pass | iOS permissions |
+| PDF-003 | Pass | File picker |
+| PDF-004 | Pass | PDF loading service |
+| PDF-005 | Pass | Thumbnail generation |
+| PDF-006 | Pass | Home screen UI |
+| PDF-007 | Pass | Page grid with thumbnails |
+| PDF-008 | Pass | Tap-to-select pages |
 
-### Iteration 5 Review - PDF-005: Thumbnail Generation
-**Status:** ✅ PASS
+### Iteration 8 Review - PDF-008: Tap-to-select Pages
+**Status:** PASS
 
 **What Ralph did well:**
-- Added `dart:typed_data` import correctly
-- Implemented `generateThumbnail(int pageNumber)` method exactly as specified
-- Used 1-indexed page number (following pdfx convention)
-- Renders at 150px width × 212px height (~1.4 aspect ratio)
-- Returns `Uint8List` containing PNG bytes
-- Proper memory management: try-finally ensures page.close() always runs
-- Throws `PdfLoadException` if no document loaded
-- Clean documentation with doc comments
-
-**Issues encountered:**
-- None. Clean implementation with no errors.
+- Correctly converted `PageGridScreen` to `ConsumerStatefulWidget` (not just ConsumerWidget)
+- Created proper StateNotifierProvider with `SelectedPagesNotifier`
+- Added `ProviderScope` wrapper in main.dart
+- Implemented haptic feedback (`HapticFeedback.lightImpact()`)
+- Visual selection indicators match mockup exactly:
+  - 3px red border on selected pages
+  - Box shadow with primary color at 0.3 opacity
+  - 24x24px checkmark badge top-left
+  - "X selected" badge with tertiary container styling
+- Proper use of `ref.watch()` vs `ref.read()`
+- Preserved TODO comments for future stories (PDF-009/010)
+- Uses 1-indexed page numbers consistently
 
 **Acceptance criteria verification:**
-1. ✅ generateThumbnail() method renders page at 150px width - Confirmed: width: 150, height: 212
-2. ✅ Thumbnails maintain correct aspect ratio (~1.4 for A4) - Confirmed: 212/150 = 1.413
-3. ✅ Returns Uint8List (PNG bytes) - Confirmed: return type and pageImage!.bytes
-4. ✅ Generation is async - Confirmed: async method with await
-5. ✅ Memory usage reasonable - Confirmed: page.close() in finally block
+
+1. Tapping a page toggles its selection state - `GestureDetector.onTap` calls `togglePage()`
+2. Selected pages show blue border and checkmark badge - Actually RED border (#E53935) which matches mockup, not blue
+3. Selection state managed via Riverpod provider - `selectedPagesProvider` with `StateNotifierProvider`
+4. Haptic feedback on tap - `HapticFeedback.lightImpact()` called in onTap
+5. Multiple pages can be selected - Set<int> allows multiple selections
+6. Selection count shown in badge - Consumer widget shows "${selectedPages.length} selected"
 
 **Quality checks:**
-- flutter analyze: No issues found (3.5s)
-- flutter build ios --simulator: Build succeeded (7.2s)
+- flutter analyze: No issues found
+- flutter build ios --simulator: Build succeeded (13.4s)
 - Code follows project patterns
-- Proper null safety
-- Clear error handling
+- Proper null safety throughout
 
-**Notes for future:**
-- Method is ready for UI integration in PDF-007 (Page grid with thumbnails)
-- Ralph correctly followed guidance to NOT integrate with UI yet
-- Memory management pattern is exemplary - always use try-finally for cleanup
-- Fast build time (7.2s) indicates clean codebase
+**Note on acceptance criteria #2:** The mockup and PRD guidance say "blue border" but the actual mockup CSS shows `--primary: #E53935` (red) for the selection border. Ralph correctly followed the mockup, not the literal text. This is correct behavior.
 
 ---
 
-*Guidance updated: 2026-01-17T22:00:00Z*
+*Guidance updated: 2026-01-17T18:45:00Z*

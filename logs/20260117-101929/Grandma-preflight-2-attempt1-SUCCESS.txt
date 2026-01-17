@@ -1,0 +1,32 @@
+The guidance file has been updated. Let me provide my assessment:
+
+---
+
+## Pre-flight Assessment Complete
+
+**Upcoming story:** PDF-008 - Tap-to-select Pages  
+**Branch drift:** None (all work on master)  
+**Conflict risk:** Low  
+
+### Assessment Summary
+
+The codebase is in excellent shape for PDF-008:
+
+1. **No drift** - All 7 completed stories are committed to master. No feature branch to track.
+
+2. **Clear entry points** - TODO comments in `page_grid_screen.dart` (lines 153-155) explicitly mark where selection UI belongs.
+
+3. **One infrastructure gap** - The app doesn't yet use Riverpod despite it being in pubspec. Ralph needs to:
+   - Add `ProviderScope` wrapper in main.dart
+   - Create a new selection provider file
+   - Convert PageGridScreen to ConsumerStatefulWidget
+
+4. **Design clarification** - Previous guidance said "blue border" for selected pages, but mockup shows **red/primary** border (`#E53935`). Only the "X selected" badge has blue background (`#E3F2FD`). I've corrected this in the pre-flight notes.
+
+5. **Scope boundaries are clear** - PDF-008 is tap-to-select only. The selection control buttons (select all, clear, invert, range dialog) are PDF-009 and PDF-010.
+
+### Decision
+
+The codebase is healthy, requirements are clear, no conflicts detected. Ralph has a well-defined task with explicit TODO markers guiding where to add code.
+
+<grandma>CONTINUE</grandma>

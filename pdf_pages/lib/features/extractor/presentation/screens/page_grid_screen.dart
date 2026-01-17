@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/pdf_service.dart';
 import '../../../providers/selection_provider.dart';
+import '../widgets/range_dialog.dart';
 
 /// Screen that displays PDF pages in a 3-column grid with thumbnails
 /// Users can view all pages from the loaded PDF document
@@ -89,6 +90,22 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
       return fileName.substring(0, fileName.length - 4);
     }
     return fileName;
+  }
+
+  /// Show the range selection dialog
+  void _showRangeDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return RangeSelectionDialog(
+          pageCount: widget.pageCount,
+          onConfirm: (Set<int> selectedPages) {
+            // Replace current selection with parsed pages
+            ref.read(selectedPagesProvider.notifier).setSelection(selectedPages);
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -180,7 +197,21 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
                 ),
 
                 const Spacer(),
-                // TODO: Selection control buttons will be added in PDF-009 and PDF-010
+
+                // Filter/range selection button
+                IconButton(
+                  onPressed: () => _showRangeDialog(),
+                  icon: const Icon(Icons.filter_list),
+                  iconSize: 20,
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  tooltip: 'Select page range',
+                ),
+
+                // TODO: Selection control buttons will be added in PDF-010
               ],
             ),
           ),

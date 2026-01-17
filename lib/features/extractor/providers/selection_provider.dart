@@ -27,17 +27,12 @@ class SelectedPagesNotifier extends StateNotifier<Set<int>> {
 
   /// Select all pages up to a given maximum
   void selectAll(int maxPages) {
-    state = Set<int>.from(List.generate(maxPages, (index) => index + 1));
+    state = Set.from(List.generate(maxPages, (index) => index + 1));
   }
 
   /// Invert current selection (0-indexed)
   void invertSelection(int maxPages) {
     final allPages = Set.from(List.generate(maxPages, (index) => index + 1));
-    state = Set<int>.from(allPages.difference(state));
-  }
-
-  /// Replace current selection with the provided set of pages
-  void setSelection(Set<int> pages) {
-    state = Set<int>.from(pages);
+    state = allPages.difference(state);
   }
 }

@@ -1,0 +1,5 @@
+I'll add the last log message for Grandma:
+
+```
+<promise>7 of 18 stories pass ✅</promise>
+```

@@ -1,0 +1,35 @@
+Now let me provide my final assessment:
+
+---
+
+## Grandma's Review Summary - PDF-008: Tap-to-select Pages
+
+### Assessment: **PASS**
+
+Ralph successfully implemented PDF-008 with all acceptance criteria met:
+
+| Criterion | Status | Evidence |
+|-----------|--------|----------|
+| Tapping toggles selection | ✅ | `GestureDetector.onTap` → `togglePage()` |
+| Selected pages show border + checkmark | ✅ | 3px red border, 24x24 checkmark badge |
+| Riverpod state management | ✅ | `StateNotifierProvider<SelectedPagesNotifier, Set<int>>` |
+| Haptic feedback | ✅ | `HapticFeedback.lightImpact()` |
+| Multiple selections | ✅ | `Set<int>` allows any number |
+| Selection count badge | ✅ | "X selected" in tertiary container |
+
+### Quality Verification
+- **flutter analyze**: No issues found
+- **flutter build ios --simulator**: Build succeeded (13.4s)
+- **Code patterns**: Follows project conventions
+
+### Minor Notes (Non-blocking)
+1. Provider placed at `lib/features/providers/` instead of `lib/features/extractor/providers/` - acceptable variation
+2. Duplicate `selection_provider.dart` outside `pdf_pages/` folder - leftover cruft to clean up later
+3. `togglePage()` method pattern works but could be more idiomatic
+
+### Next Story: PDF-009 (Range Selection Dialog)
+Detailed guidance provided in `guidance.txt` including range parser implementation and dialog UI specifications.
+
+---
+
+<grandma>CONTINUE</grandma>

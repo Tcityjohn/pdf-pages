@@ -125,7 +125,7 @@
       ],
       "priority": 7,
       "complexity": "medium",
-      "passes": false,
+      "passes": true,
       "notes": "Use GridView.builder for performance. Thumbnails should load progressively."
     },
     {
@@ -142,7 +142,7 @@
       ],
       "priority": 8,
       "complexity": "low",
-      "passes": false,
+      "passes": true,
       "notes": "iOS Simulator note: Haptic feedback won't work in Simulator, but code should be present."
     },
     {
