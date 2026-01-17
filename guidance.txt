@@ -1,66 +1,122 @@
 # Grandma's Guidance
 
-Last reviewed: Not yet reviewed
-Last story reviewed: None
+Last reviewed: 2026-01-17T13:35:00Z
+Last story reviewed: PDF-001
 
 ---
 
 ## Current Assessment
 
-This is the initial state before any implementation. Ralph should begin with PDF-001 (Project scaffolding) and follow the instructions in `prompt-supervised.md`.
+Ralph successfully completed PDF-001 (Project scaffolding). The project builds correctly, all dependencies are present, and the app launches on iOS Simulator without errors.
 
-The PRD contains 18 user stories to implement in priority order. HTML mockups are available in the `./mockups/` directory for UI reference.
+**Key accomplishment:** Ralph proactively identified and resolved a critical RevenueCat dependency issue (SubscriptionPeriod type ambiguity) by upgrading to purchases_flutter ^9.10.6. This shows good problem-solving and attention to detail.
 
-## Guidance for First Iteration
+The project is properly configured with:
+- Organization: com.quickhitter ✓
+- Project name: pdf_pages ✓
+- iOS deployment target: 14.0 ✓
+- All 8 required dependencies ✓
+- Builds successfully for iOS Simulator ✓
+- Launches without errors ✓
 
-### For PDF-001: Project Scaffolding
+## Guidance for Next Iteration
 
-1. **Create the Flutter project correctly:**
-   ```bash
-   flutter create --org com.quickhitter pdf_pages
-   cd pdf_pages
+### For PDF-002: iOS Permissions and Info.plist
+
+1. **Focus on Info.plist configuration:**
+   - File location: `pdf_pages/ios/Runner/Info.plist`
+   - Add three keys:
+     - `UISupportsDocumentBrowser`: Boolean, YES
+     - `LSSupportsOpeningDocumentsInPlace`: Boolean, YES
+     - `CFBundleDocumentTypes`: Array with PDF type
+
+2. **CFBundleDocumentTypes structure:**
+   ```xml
+   <key>CFBundleDocumentTypes</key>
+   <array>
+     <dict>
+       <key>CFBundleTypeName</key>
+       <string>PDF Document</string>
+       <key>LSHandlerRank</key>
+       <string>Alternate</string>
+       <key>LSItemContentTypes</key>
+       <array>
+         <string>com.adobe.pdf</string>
+       </array>
+     </dict>
+   </array>
    ```
 
-2. **Add ALL dependencies at once** to avoid multiple pub get calls:
-   - flutter_riverpod: ^2.4.9
-   - pdfx: ^2.6.0
-   - pdf: ^3.10.8
-   - file_picker: ^8.0.0
-   - share_plus: ^7.2.2
-   - path_provider: ^2.1.2
-   - purchases_flutter: ^6.29.0
-   - shared_preferences: ^2.2.2
+3. **Testing note:**
+   - As noted in the PRD, "Open In" from Files app requires a physical device
+   - On Simulator, you can only verify the plist keys are present
+   - Use `plutil -lint ios/Runner/Info.plist` to verify syntax
+   - Check that the app still builds after changes
 
-3. **Test on iOS Simulator immediately:**
-   ```bash
-   flutter run
-   ```
-   The app should launch with the default Flutter counter screen.
+4. **Don't skip verification:**
+   - Read the Info.plist file to confirm keys are present
+   - Rebuild the app to ensure no errors
+   - Mark story as passed only after all criteria verified
 
-4. **Verify build succeeds:**
-   ```bash
-   flutter build ios --simulator
-   ```
-
-### iOS Simulator Setup
-- Make sure Xcode is installed and command-line tools configured
-- Run `open -a Simulator` to launch Simulator app
-- Default device (iPhone 15) is fine for initial testing
-
-### Common First-Iteration Mistakes to Avoid
-- Don't skip the iOS Simulator test
-- Don't add custom code yet - just scaffolding
-- Don't forget to commit with proper message format
-- Don't mark story as passed until ALL acceptance criteria verified
+### Common Pitfalls to Avoid
+- Don't add keys to the wrong Info.plist (there may be multiple)
+- Don't forget to rebuild after editing Info.plist
+- XML syntax matters - one typo breaks the build
+- The PRD notes that full "Open In" testing requires a device, but you can still verify the configuration is correct
 
 ## Patterns Noticed
 
-*No patterns yet - this is iteration 0.*
+### Ralph's Strengths (from PDF-001)
+- **Thorough documentation** in progress.txt - excellent detail on the RevenueCat issue
+- **Problem-solving** - didn't give up when initial dependency version failed
+- **Proper git workflow** - good commit messages with Co-Authored-By
+
+### Project Configuration Patterns
+- iOS deployment target: 14.0 minimum (for RevenueCat)
+- RevenueCat requires BUILD_LIBRARY_FOR_DISTRIBUTION = YES
+- Use purchases_flutter ^9.10.6 or newer to avoid type ambiguity
+
+### Codebase Structure
+```
+pdf_pages/
+├── ios/
+│   ├── Runner/
+│   │   └── Info.plist          ← Edit this for PDF-002
+│   └── Podfile                 ← Already configured correctly
+├── lib/
+│   └── main.dart               ← Default counter app (will be replaced)
+└── pubspec.yaml                ← Dependencies configured
+```
 
 ## History
 
-*No history yet - awaiting first iteration.*
+### Iteration 1 Review - PDF-001: Project Scaffolding
+**Status:** ✅ PASS
+
+**What Ralph did well:**
+- Created project with correct organization (com.quickhitter)
+- Added all 8 dependencies correctly
+- Identified RevenueCat version issue and fixed it (upgraded to ^9.10.6)
+- Configured iOS deployment target to 14.0
+- Documented learnings thoroughly in progress.txt
+- Proper git commit format
+
+**Issues encountered:**
+- Initial purchases_flutter ^6.29.0 had SubscriptionPeriod type ambiguity
+- Ralph resolved by upgrading to ^9.10.6
+
+**Acceptance criteria verification:**
+1. ✅ Organization com.quickhitter - Bundle ID: com.quickhitter.pdfPages
+2. ✅ Project name pdf_pages - Verified in pubspec.yaml
+3. ✅ All dependencies present - All 8 packages added
+4. ✅ Builds successfully - flutter build ios --simulator succeeded in 21.5s
+5. ✅ Launches in iOS Simulator - Tested and verified (process launched successfully)
+
+**Notes for future:**
+- Ralph's documentation pattern is good - keep this up
+- The RevenueCat fix will help future stories (PDF-015)
+- Ready to proceed to PDF-002
 
 ---
 
-*Guidance last updated: Initial setup*
+*Guidance last updated: 2026-01-17T13:35:00Z*

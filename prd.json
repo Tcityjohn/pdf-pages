@@ -40,7 +40,7 @@
       ],
       "priority": 2,
       "complexity": "low",
-      "passes": false,
+      "passes": true,
       "notes": "See mockups/01-home-screen.html for design reference. iOS Simulator note: Document picker works but 'Open In' from Files requires physical device."
     },
     {

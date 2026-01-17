@@ -125,3 +125,50 @@ end
 - Initialize repo at project root (not inside pdf_pages/)
 - Commit format: `feat: [PDF-XXX] - Story title`
 - Include Co-Authored-By line
+
+---
+
+## 2026-01-17T06:00:00Z - PDF-002: iOS permissions and Info.plist
+
+### What was implemented
+- Added iOS document permissions to Info.plist for PDF handling
+- Configured UISupportsDocumentBrowser = true
+- Configured LSSupportsOpeningDocumentsInPlace = true
+- Added CFBundleDocumentTypes with PDF support (com.adobe.pdf)
+
+### Files created/modified
+- Modified `pdf_pages/ios/Runner/Info.plist` - added document permissions and PDF type registration
+
+### Issues encountered
+- None. Configuration applied cleanly and build succeeded.
+
+### Learnings for future iterations
+
+**Info.plist configuration for document handling:**
+- UISupportsDocumentBrowser enables document browser integration
+- LSSupportsOpeningDocumentsInPlace allows files to be opened in place (not copied)
+- CFBundleDocumentTypes array registers app as handler for specific file types
+- LSHandlerRank "Alternate" means app can open PDFs but isn't default handler
+- Use UTI "com.adobe.pdf" for PDF documents (not file extension)
+
+**iOS Simulator limitations for document handling:**
+- Document picker (file_picker package) works in Simulator
+- "Open In" from Files app requires physical device (can't test in Simulator)
+- Configuration is correct even though full "Open In" flow can't be tested in Simulator
+
+**Info.plist structure for PDF handling:**
+```xml
+<key>CFBundleDocumentTypes</key>
+<array>
+  <dict>
+    <key>CFBundleTypeName</key>
+    <string>PDF Document</string>
+    <key>LSHandlerRank</key>
+    <string>Alternate</string>
+    <key>LSItemContentTypes</key>
+    <array>
+      <string>com.adobe.pdf</string>
+    </array>
+  </dict>
+</array>
+```
