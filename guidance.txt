@@ -1,68 +1,65 @@
 # Grandma's Guidance
 
-Last reviewed: 2026-01-17T13:35:00Z
-Last story reviewed: PDF-001
+Last reviewed: 2026-01-17T14:15:00Z
+Last story reviewed: PDF-002
 
 ---
 
 ## Current Assessment
 
-Ralph successfully completed PDF-001 (Project scaffolding). The project builds correctly, all dependencies are present, and the app launches on iOS Simulator without errors.
+Ralph successfully completed PDF-002 (iOS permissions and Info.plist). The configuration is clean, correct, and follows iOS best practices for document handling.
 
-**Key accomplishment:** Ralph proactively identified and resolved a critical RevenueCat dependency issue (SubscriptionPeriod type ambiguity) by upgrading to purchases_flutter ^9.10.6. This shows good problem-solving and attention to detail.
+**Work quality:** Excellent. Ralph followed the guidance precisely, added all three required keys to Info.plist with perfect XML structure, and verified the build still succeeds. No issues found.
 
-The project is properly configured with:
-- Organization: com.quickhitter ✓
-- Project name: pdf_pages ✓
-- iOS deployment target: 14.0 ✓
-- All 8 required dependencies ✓
-- Builds successfully for iOS Simulator ✓
-- Launches without errors ✓
+The project now has proper iOS document handling configured:
+- UISupportsDocumentBrowser = true ✓
+- LSSupportsOpeningDocumentsInPlace = true ✓
+- CFBundleDocumentTypes array with PDF support ✓
+- Info.plist XML syntax validated ✓
+- Build succeeds (13.2s) ✓
+- No analyzer warnings ✓
+
+**Progression:** Two stories completed, zero issues. Ralph is maintaining high quality standards.
 
 ## Guidance for Next Iteration
 
-### For PDF-002: iOS Permissions and Info.plist
+### For PDF-003: PDF File Picker
 
-1. **Focus on Info.plist configuration:**
-   - File location: `pdf_pages/ios/Runner/Info.plist`
-   - Add three keys:
-     - `UISupportsDocumentBrowser`: Boolean, YES
-     - `LSSupportsOpeningDocumentsInPlace`: Boolean, YES
-     - `CFBundleDocumentTypes`: Array with PDF type
+This is the first story that requires actual code implementation (not just configuration). Key points:
 
-2. **CFBundleDocumentTypes structure:**
-   ```xml
-   <key>CFBundleDocumentTypes</key>
-   <array>
-     <dict>
-       <key>CFBundleTypeName</key>
-       <string>PDF Document</string>
-       <key>LSHandlerRank</key>
-       <string>Alternate</string>
-       <key>LSItemContentTypes</key>
-       <array>
-         <string>com.adobe.pdf</string>
-       </array>
-     </dict>
-   </array>
+1. **Use file_picker package** (already in dependencies):
+   ```dart
+   import 'package:file_picker/file_picker.dart';
    ```
 
-3. **Testing note:**
-   - As noted in the PRD, "Open In" from Files app requires a physical device
-   - On Simulator, you can only verify the plist keys are present
-   - Use `plutil -lint ios/Runner/Info.plist` to verify syntax
-   - Check that the app still builds after changes
+2. **Implementation approach:**
+   - Create a button in main.dart that triggers file picker
+   - Use `FilePicker.platform.pickFiles()` with `type: FileType.custom, allowedExtensions: ['pdf']`
+   - Handle result: check if `result != null`, get path from `result.files.single.path`
+   - Handle cancel: `result == null` means user cancelled
+   - Show picked file path in UI (for verification)
 
-4. **Don't skip verification:**
-   - Read the Info.plist file to confirm keys are present
-   - Rebuild the app to ensure no errors
-   - Mark story as passed only after all criteria verified
+3. **Testing in iOS Simulator:**
+   - Add sample PDFs to Simulator via drag-drop to Files app
+   - Or use Safari in Simulator to download a PDF
+   - File picker should show these PDFs
+
+4. **Error handling:**
+   - Wrap in try-catch to handle permissions or errors
+   - Test cancel flow explicitly
+
+5. **Don't over-engineer:**
+   - Just get basic picker working first
+   - Don't create services or state management yet
+   - Simple setState() in main.dart is fine for now
+   - We'll refactor later when integrating with PDF loading (PDF-004)
 
 ### Common Pitfalls to Avoid
-- Don't add keys to the wrong Info.plist (there may be multiple)
-- Don't forget to rebuild after editing Info.plist
-- XML syntax matters - one typo breaks the build
-- The PRD notes that full "Open In" testing requires a device, but you can still verify the configuration is correct
+- Don't create complex architecture yet - keep it simple
+- Don't forget to test cancel action
+- Don't skip iOS Simulator testing with actual PDF
+- File paths on iOS Simulator are long - use basename() to display filename
+- Remember: file_picker returns nullable result
 
 ## Patterns Noticed
 
@@ -119,4 +116,33 @@ pdf_pages/
 
 ---
 
-*Guidance last updated: 2026-01-17T13:35:00Z*
+### Iteration 2 Review - PDF-002: iOS Permissions and Info.plist
+**Status:** ✅ PASS
+
+**What Ralph did well:**
+- Added all three required Info.plist keys correctly
+- Perfect XML structure with proper indentation
+- Used correct UTI identifier (com.adobe.pdf) instead of file extension
+- Verified Info.plist syntax with plutil (returned OK)
+- Confirmed build still succeeds (13.2s)
+- Ran flutter analyze (no issues found)
+- Updated progress.txt with comprehensive learnings
+- Proper commit message format
+
+**Issues encountered:**
+- None. Clean implementation with no errors.
+
+**Acceptance criteria verification:**
+1. ✅ UISupportsDocumentBrowser = true - Confirmed in Info.plist:48
+2. ✅ LSSupportsOpeningDocumentsInPlace = true - Confirmed in Info.plist:50
+3. ✅ CFBundleDocumentTypes for PDF - Confirmed in Info.plist:52-64
+4. ✅ App can be opened from Files (configuration correct, tested on Simulator to extent possible)
+
+**Notes for future:**
+- Ralph's attention to detail is excellent - no syntax errors, proper structure
+- Documentation in progress.txt explains iOS Simulator limitations clearly
+- Ready to proceed to PDF-003 (first actual code implementation)
+
+---
+
+*Guidance last updated: 2026-01-17T14:15:00Z*
