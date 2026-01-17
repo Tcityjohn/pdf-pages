@@ -79,3 +79,41 @@ Created `PdfService` in `lib/core/services/pdf_service.dart`. Loads PDFs, return
   - Method is async and won't block UI thread
 
 ---
+
+## 2026-01-17T23:00:00Z - PDF-006: Home Screen UI
+- Rebuilt HomePage UI in `lib/main.dart` to match `mockups/01-home-screen.html`
+- Implemented all design specifications:
+  - PDF icon (Icons.picture_as_pdf) in 128×128 colored circle with primary container color (#FFCDD2)
+  - Title "Extract PDF Pages" with proper typography (22px, bold)
+  - Two-line subtitle explaining the feature
+  - Privacy badge with lock icon and green color scheme
+  - Usage banner with 3 red dots showing "3 free extractions left"
+  - Full-width "Select PDF" button with folder icon
+  - Settings gear icon in AppBar (top right)
+- Used Material 3 components throughout
+- Applied correct design system colors:
+  - Primary: #E53935
+  - Primary Container: #FFCDD2
+  - Tertiary Container: #E8F5E9 (for privacy badge)
+  - Surface: #FAFAFA
+  - On-surface-variant: #757575
+- Removed temporary file display UI (was for PDF-004 testing)
+- Cleaned up unused state variables (_selectedFilePath, _selectedFileName, _pageCount)
+- Removed unused import (path package)
+- Added placeholder for PDF-007 navigation (will navigate to page grid after loading)
+- Files modified: `lib/main.dart`
+- Quality checks passed:
+  - `flutter analyze` - No issues found
+  - `flutter build ios --simulator` - Build succeeded (11.4s)
+  - `flutter install` - Installed successfully on iPhone 17 simulator
+- **Learnings for future iterations:**
+  - Use Spacer widgets for flexible vertical spacing in Column layouts
+  - SafeArea ensures content doesn't overlap with iOS notch/home indicator
+  - Material 3 removes elevation by default - set elevation: 0 explicitly
+  - AppBar centerTitle: true ensures proper title alignment
+  - Row with Expanded ensures text doesn't overflow in constrained layouts
+  - BorderRadius.circular(20) creates pill-shaped badges
+  - Icons.chevron_right is the proper Material icon for right arrow (not custom SVG)
+  - Layout is fully responsive using Spacer, Expanded, and relative sizing
+
+---

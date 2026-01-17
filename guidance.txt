@@ -1,95 +1,101 @@
 # Grandma's Guidance
 
-Last reviewed: 2026-01-17T16:45:00Z
-Last story reviewed: PDF-004
+Last reviewed: 2026-01-17T22:00:00Z
+Last story reviewed: PDF-005
 
 ---
 
 ## Current Assessment
 
-**4 of 18 stories completed.** Project is on track. PDF-001 through PDF-004 all passed with good quality.
+**5 of 18 stories completed.** Project continues on excellent trajectory. PDF-005 (Thumbnail Generation) passes all acceptance criteria with clean implementation.
+
+Ralph's work quality remains high:
+- Precise implementation following guidance
+- Proper memory management (try-finally for page cleanup)
+- Correct use of pdfx API (1-indexed pages, PdfPageImageFormat enum)
+- Clean code with no analyzer warnings
+- Fast build time (7.2s)
 
 Current codebase state:
 - `lib/main.dart` - HomePage with file picker, shows page count after loading
-- `lib/core/services/pdf_service.dart` - PdfService with loadPdf(), closeDocument()
+- `lib/core/services/pdf_service.dart` - PdfService with loadPdf(), generateThumbnail(), closeDocument()
 - PdfService keeps `currentDocument` reference for thumbnail generation
+- Thumbnail generation ready for UI integration (PDF-007)
 
-## Guidance for PDF-005: Thumbnail Generation
+## Guidance for PDF-006: Home Screen UI
 
-**This is your next story.** Here's exactly how to implement it:
+**This is your next story.** Build the home screen that matches the mockup.
 
-### The pdfx Render API
+### Implementation Approach
 
-```dart
-// 1. Get a page (1-indexed!)
-final page = await document.getPage(pageNumber); // pageNumber starts at 1
+1. **Read the mockup first:**
+   - Open `./mockups/01-home-screen.html` in a browser to see the target design
+   - Note exact colors, spacing, icon sizes, typography
 
-// 2. Render to image
-final pageImage = await page.render(
-  width: 150,  // target width in pixels
-  height: 212, // ~1.4 aspect ratio for A4
-  format: PdfPageImageFormat.png,
-);
+2. **Create the UI in main.dart:**
+   - Replace the current simple UI with the full home screen design
+   - Use Material 3 components (ElevatedButton, Card, etc.)
+   - Match all design specifications exactly
 
-// 3. Get bytes
-final Uint8List bytes = pageImage!.bytes;
+### Design Specifications
 
-// 4. Close the page to free memory
-await page.close();
-```
+**Colors:**
+- Primary: `Color(0xFFE53935)` (red)
+- Primary container: `Color(0xFFFFCDD2)` (light red)
+- Background: White
+- Text: Dark grey/black
 
-### Implementation Steps
+**Layout:**
+- Centered content
+- PDF icon in colored circle at top
+- Title: "Extract PDF Pages" (large, bold)
+- Subtitle: Explanation text (regular weight)
+- Privacy badge with lock icon
+- Select PDF button with folder icon at bottom
+- Settings gear icon in app bar (top right)
 
-1. **Add method to PdfService** (`lib/core/services/pdf_service.dart`):
-```dart
-import 'dart:typed_data';
+**Spacing:**
+- Use 12px grid for padding and margins
+- 8px or 12px border radius on buttons/cards
+- Consistent vertical spacing between elements
 
-/// Generates a thumbnail for the given page number (1-indexed)
-/// Returns PNG bytes at 150px width
-Future<Uint8List> generateThumbnail(int pageNumber) async {
-  if (_currentDocument == null) {
-    throw PdfLoadException('No document loaded');
-  }
+**Icons:**
+- PDF icon: `Icons.picture_as_pdf`
+- Lock icon: `Icons.lock_outline`
+- Folder icon: `Icons.folder_open`
+- Settings icon: `Icons.settings`
 
-  final page = await _currentDocument!.getPage(pageNumber);
-  try {
-    // Render at 150px width, ~1.4 aspect ratio for A4
-    final pageImage = await page.render(
-      width: 150,
-      height: 212,
-      format: PdfPageImageFormat.png,
-    );
-    return pageImage!.bytes;
-  } finally {
-    await page.close(); // Always close to free memory
-  }
-}
-```
+### Testing Requirements
 
-2. **Import needed types** at top of pdf_service.dart:
-```dart
-import 'dart:typed_data';
-```
+Test on these iOS Simulator devices:
+- iPhone SE (3rd gen) - smallest screen
+- iPhone 15 - standard size
+- iPhone 15 Pro Max - largest screen
 
-3. **That's it!** Don't integrate with UI yet - just add the method to the service.
-
-### Acceptance Criteria Checklist
-- [ ] generateThumbnail() method renders page at 150px width
-- [ ] Thumbnails maintain correct aspect ratio (~1.4 for A4)
-- [ ] Returns Uint8List (PNG bytes)
-- [ ] Generation is async (it already is with await)
-- [ ] Memory: close page after rendering
-
-### Testing
-- Run `flutter analyze` - should have no issues
-- Run `flutter build ios --simulator` - should succeed
-- No need to test in Simulator UI for this story - just verify the method exists and code compiles
+Verify:
+- Layout doesn't overflow on small screens
+- Text is readable
+- Buttons are tappable
+- Spacing looks balanced
+- Colors match mockup exactly
 
 ### Don't Over-Engineer
-- Don't add caching yet
-- Don't integrate with UI yet (that's PDF-007)
-- Don't create thumbnail widgets yet
-- Just add the one method to PdfService
+
+- Don't add functionality yet - just the UI
+- File picker integration already exists - keep it
+- Settings icon doesn't need to navigate anywhere yet (PDF-017)
+- Focus on matching the mockup pixel-perfect
+
+### Acceptance Criteria Checklist
+
+- [ ] UI matches mockups/01-home-screen.html
+- [ ] PDF icon displayed in colored circle
+- [ ] Title: 'Extract PDF Pages'
+- [ ] Subtitle explaining the feature
+- [ ] Privacy badge with lock icon
+- [ ] Select PDF button with folder icon
+- [ ] Settings gear icon in app bar
+- [ ] Responsive layout works on different iOS device sizes
 
 ---
 
@@ -99,6 +105,8 @@ import 'dart:typed_data';
 - pdfx uses 1-indexed pages
 - Always close PdfPage after use to free memory
 - iOS deployment target: 14.0
+- Use Material 3 components
+- 12px spacing grid, 8px/12px border radius
 
 ---
 
@@ -110,7 +118,44 @@ import 'dart:typed_data';
 | PDF-002 | ✅ Pass | iOS permissions |
 | PDF-003 | ✅ Pass | File picker |
 | PDF-004 | ✅ Pass | PDF loading service |
+| PDF-005 | ✅ Pass | Thumbnail generation |
+
+### Iteration 5 Review - PDF-005: Thumbnail Generation
+**Status:** ✅ PASS
+
+**What Ralph did well:**
+- Added `dart:typed_data` import correctly
+- Implemented `generateThumbnail(int pageNumber)` method exactly as specified
+- Used 1-indexed page number (following pdfx convention)
+- Renders at 150px width × 212px height (~1.4 aspect ratio)
+- Returns `Uint8List` containing PNG bytes
+- Proper memory management: try-finally ensures page.close() always runs
+- Throws `PdfLoadException` if no document loaded
+- Clean documentation with doc comments
+
+**Issues encountered:**
+- None. Clean implementation with no errors.
+
+**Acceptance criteria verification:**
+1. ✅ generateThumbnail() method renders page at 150px width - Confirmed: width: 150, height: 212
+2. ✅ Thumbnails maintain correct aspect ratio (~1.4 for A4) - Confirmed: 212/150 = 1.413
+3. ✅ Returns Uint8List (PNG bytes) - Confirmed: return type and pageImage!.bytes
+4. ✅ Generation is async - Confirmed: async method with await
+5. ✅ Memory usage reasonable - Confirmed: page.close() in finally block
+
+**Quality checks:**
+- flutter analyze: No issues found (3.5s)
+- flutter build ios --simulator: Build succeeded (7.2s)
+- Code follows project patterns
+- Proper null safety
+- Clear error handling
+
+**Notes for future:**
+- Method is ready for UI integration in PDF-007 (Page grid with thumbnails)
+- Ralph correctly followed guidance to NOT integrate with UI yet
+- Memory management pattern is exemplary - always use try-finally for cleanup
+- Fast build time (7.2s) indicates clean codebase
 
 ---
 
-*Guidance updated: 2026-01-17T16:45:00Z*
+*Guidance updated: 2026-01-17T22:00:00Z*

@@ -107,7 +107,7 @@
       ],
       "priority": 6,
       "complexity": "low",
-      "passes": false,
+      "passes": true,
       "notes": "Use Material 3 components. Test on iPhone SE, iPhone 15, and iPhone 15 Pro Max in Simulator."
     },
     {
