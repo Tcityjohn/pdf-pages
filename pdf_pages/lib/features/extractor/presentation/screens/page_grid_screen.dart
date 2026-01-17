@@ -1,10 +1,13 @@
-import 'dart:typed_data';
+// Removing unnecessary import
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/pdf_service.dart';
+import '../../../providers/selection_provider.dart';
 
 /// Screen that displays PDF pages in a 3-column grid with thumbnails
 /// Users can view all pages from the loaded PDF document
-class PageGridScreen extends StatefulWidget {
+class PageGridScreen extends ConsumerStatefulWidget {
   final PdfService pdfService;
   final String documentName;
   final int pageCount;
@@ -17,10 +20,10 @@ class PageGridScreen extends StatefulWidget {
   });
 
   @override
-  State<PageGridScreen> createState() => _PageGridScreenState();
+  ConsumerState<PageGridScreen> createState() => _PageGridScreenState();
 }
 
-class _PageGridScreenState extends State<PageGridScreen> {
+class _PageGridScreenState extends ConsumerState<PageGridScreen> {
   // Cache for generated thumbnails (1-indexed page number -> thumbnail bytes)
   final Map<int, Uint8List> _thumbnailCache = {};
 
@@ -150,7 +153,32 @@ class _PageGridScreenState extends State<PageGridScreen> {
                     ),
                   ),
                 ),
-                // TODO: Selected count badge will be added in PDF-008
+                const SizedBox(width: 8),
+
+                // Selected count badge
+                Consumer(
+                  builder: (context, ref, child) {
+                    final selectedPages = ref.watch(selectedPagesProvider);
+                    return selectedPages.isNotEmpty
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE3F2FD), // Tertiary container
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            '${selectedPages.length} selected',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF1565C0), // Dark blue for badge text
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink();
+                  },
+                ),
+
                 const Spacer(),
                 // TODO: Selection control buttons will be added in PDF-009 and PDF-010
               ],
@@ -188,7 +216,7 @@ class _PageGridScreenState extends State<PageGridScreen> {
 }
 
 /// Widget for displaying a single page thumbnail
-class _PageThumbnailWidget extends StatelessWidget {
+class _PageThumbnailWidget extends ConsumerWidget {
   final int pageNumber;
   final Uint8List? thumbnail;
   final bool isLoading;
@@ -200,70 +228,118 @@ class _PageThumbnailWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final thumbnailData = thumbnail; // Local variable for null promotion
+    final selectedPages = ref.watch(selectedPagesProvider);
+    final isSelected = selectedPages.contains(pageNumber);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5), // Surface container
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: const Color(0xFFE0E0E0), // Outline
-          width: 1,
+    return GestureDetector(
+      onTap: () {
+        // Perform haptic feedback
+        HapticFeedback.lightImpact();
+
+        // Toggle page selection
+        ref.read(selectedPagesProvider.notifier).togglePage(pageNumber);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F5F5), // Surface container
+          borderRadius: BorderRadius.circular(8),
+          border: isSelected
+            ? Border.all(
+                color: const Color(0xFFE53935), // Primary color
+                width: 3,
+                style: BorderStyle.solid,
+              )
+            : Border.all(
+                color: const Color(0xFFE0E0E0), // Outline
+                width: 1,
+              ),
+          boxShadow: isSelected
+            ? [
+                BoxShadow(
+                  color: const Color(0xFFE53935).withValues(alpha: 76),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
         ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Stack(
-          children: [
-            // Thumbnail or loading indicator
-            if (thumbnailData != null)
-              Positioned.fill(
-                child: Image.memory(
-                  thumbnailData,
-                  fit: BoxFit.cover,
-                ),
-              )
-            else if (isLoading)
-              const Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Color(0xFFE53935),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Stack(
+            children: [
+              // Thumbnail or loading indicator
+              if (thumbnailData != null)
+                Positioned.fill(
+                  child: Image.memory(
+                    thumbnailData,
+                    fit: BoxFit.cover,
+                  ),
+                )
+              else if (isLoading)
+                const Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFFE53935),
+                    ),
+                  ),
+                )
+              else
+                // Placeholder if loading hasn't started
+                const Center(
+                  child: Icon(
+                    Icons.picture_as_pdf,
+                    size: 32,
+                    color: Color(0xFF757575),
                   ),
                 ),
-              )
-            else
-              // Placeholder if loading hasn't started
-              const Center(
-                child: Icon(
-                  Icons.picture_as_pdf,
-                  size: 32,
-                  color: Color(0xFF757575),
+
+              // Page number badge in bottom-right corner
+              Positioned(
+                bottom: 6,
+                right: 6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 180),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '$pageNumber',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ),
 
-            // Page number badge in bottom-right corner
-            Positioned(
-              bottom: 6,
-              right: 6,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  '$pageNumber',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
+              // Selection checkmark badge
+              if (isSelected)
+                Positioned(
+                  top: 6,
+                  left: 6,
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE53935), // Primary color
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.check,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
