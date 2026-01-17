@@ -172,3 +172,116 @@ end
   </dict>
 </array>
 ```
+
+---
+
+## 2026-01-17T06:30:00Z - PDF-003: PDF File Picker
+
+### What was implemented
+- Implemented PDF file picker functionality using file_picker package
+- Created UI with Select PDF button, PDF icon, title, and subtitle
+- Added file path display showing both filename and full path
+- Implemented error handling with try-catch
+- Added cancel action handling (returns gracefully when result is null)
+- Simple setState() implementation as per Grandma's guidance
+
+### Files created/modified
+- Modified `pdf_pages/lib/main.dart` - Replaced demo counter app with PDF picker UI and logic
+- Modified `pdf_pages/pubspec.yaml` - Added path package dependency (^1.9.0)
+- Modified `pdf_pages/pubspec.lock` - Updated after adding path dependency
+
+### Issues encountered and resolved
+1. **Missing path package dependency**
+   - flutter analyze reported: "The imported package 'path' isn't a dependency"
+   - Used path.basename() to display clean filenames instead of long iOS paths
+   - **Solution**: Added path: ^1.9.0 to pubspec.yaml dependencies
+   - Ran flutter pub get and verify with flutter analyze (passed)
+
+### Learnings for future iterations
+
+**File picker implementation pattern:**
+- Use `FilePicker.platform.pickFiles()` with `type: FileType.custom, allowedExtensions: ['pdf']`
+- Result is nullable - `result == null` means user cancelled
+- File path is also nullable - check `result.files.single.path != null`
+- iOS Simulator paths are very long - use basename() to show just the filename
+- Wrap in try-catch to handle permissions errors or other issues
+
+**iOS Simulator testing notes:**
+- File picker UI works perfectly in Simulator
+- `xcrun simctl addmedia` doesn't support PDFs (only photos/videos)
+- PDFs can be added to Simulator via:
+  - Drag-drop files to Simulator window while Files app is open
+  - Download PDFs using Safari in Simulator
+  - AirDrop to Simulator (if enabled)
+
+**Code structure:**
+- Kept implementation simple in main.dart with setState() as per Grandma's guidance
+- No complex architecture yet - that comes later when integrating PDF loading (PDF-004)
+- State variables: _selectedFilePath, _selectedFileName, _errorMessage, _isPickingFile
+- Disabled button while picker is open (_isPickingFile state)
+
+**UI implementation:**
+- Used primary color #E53935 for PDF icon background and button
+- Container with circular border radius (40) for PDF icon
+- ElevatedButton with folder_open icon and 12px border radius
+- Conditional rendering for selected file display and error messages
+- Clean design matching the project design system
+
+**Testing verification:**
+- App builds successfully: 43.3s Xcode build
+- Runs on iOS Simulator without errors (iPhone 17 Pro tested)
+- flutter analyze: No issues found
+- File picker opens correctly when button tapped
+- Cancel action tested - returns gracefully with no errors
+
+**Acceptance criteria verification:**
+1. ✅ FilePicker opens when 'Select PDF' button is tapped - Working
+2. ✅ Only PDF files can be selected - allowedExtensions: ['pdf']
+3. ✅ Selected file path is captured correctly - path stored in state
+4. ✅ Cancel action returns gracefully - null check handles this
+5. ✅ Works in iOS Simulator - Tested and verified running
+
+**Dependencies added:**
+- path: ^1.9.0 (for basename() function)
+
+**Pattern for file picker state management:**
+```dart
+Future<void> _pickPdfFile() async {
+  setState(() {
+    _isPickingFile = true;
+    _errorMessage = null;
+  });
+
+  try {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+
+    setState(() {
+      _isPickingFile = false;
+      if (result != null && result.files.single.path != null) {
+        _selectedFilePath = result.files.single.path;
+        _selectedFileName = path.basename(_selectedFilePath!);
+      } else {
+        // User cancelled
+        _selectedFilePath = null;
+        _selectedFileName = null;
+      }
+    });
+  } catch (e) {
+    setState(() {
+      _isPickingFile = false;
+      _errorMessage = 'Error picking file: ${e.toString()}';
+      _selectedFilePath = null;
+      _selectedFileName = null;
+    });
+  }
+}
+```
+
+**Important notes for next iterations:**
+- This simple implementation will be refactored when integrating PDF loading service (PDF-004)
+- File path is captured and ready to be passed to pdfx for document loading
+- Keep the simple approach until we add proper state management with Riverpod
+- Cancel flow is important - always handle null results gracefully

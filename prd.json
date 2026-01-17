@@ -56,7 +56,7 @@
       ],
       "priority": 3,
       "complexity": "medium",
-      "passes": false,
+      "passes": true,
       "notes": "Use file_picker package. iOS Simulator note: Add sample PDFs to Simulator via Finder drag-drop to Files app."
     },
     {
