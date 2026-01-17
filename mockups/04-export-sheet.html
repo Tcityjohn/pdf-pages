@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Pages - Export Success</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #E53935;
+            --primary-dark: #C62828;
+            --success: #4CAF50;
+            --success-container: #E8F5E9;
+            --surface: #FAFAFA;
+            --surface-container: #F5F5F5;
+            --on-surface: #212121;
+            --on-surface-variant: #757575;
+            --outline: #E0E0E0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .phone-frame {
+            width: 390px;
+            height: 844px;
+            background: var(--surface);
+            border-radius: 44px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 12px solid #1a1a1a;
+            position: relative;
+        }
+
+        .notch {
+            width: 126px;
+            height: 34px;
+            background: #1a1a1a;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 0 0 20px 20px;
+            z-index: 10;
+        }
+
+        .background-content {
+            position: absolute;
+            inset: 0;
+            background: var(--surface);
+        }
+
+        .sheet-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .bottom-sheet {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 28px 28px 0 0;
+            padding: 24px;
+            padding-bottom: 40px;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .sheet-handle {
+            width: 36px;
+            height: 4px;
+            background: var(--outline);
+            border-radius: 2px;
+            margin: 0 auto 20px;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--success-container);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+
+        .success-icon svg {
+            width: 48px;
+            height: 48px;
+            fill: var(--success);
+        }
+
+        .sheet-title {
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+            color: var(--on-surface);
+        }
+
+        .file-name {
+            font-size: 14px;
+            color: var(--on-surface-variant);
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .btn-filled {
+            background: var(--primary);
+            color: white;
+            margin-bottom: 12px;
+        }
+
+        .btn-filled svg {
+            fill: white;
+        }
+
+        .btn-filled:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-outlined {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            margin-bottom: 12px;
+        }
+
+        .btn-outlined svg {
+            fill: var(--primary);
+        }
+
+        .btn-outlined:hover {
+            background: rgba(229, 57, 53, 0.08);
+        }
+
+        .btn-text {
+            background: transparent;
+            color: var(--on-surface-variant);
+        }
+
+        .btn-text:hover {
+            background: var(--surface-container);
+        }
+
+        .home-indicator {
+            width: 134px;
+            height: 5px;
+            background: #1a1a1a;
+            border-radius: 3px;
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <div class="notch"></div>
+        <div class="background-content"></div>
+        <div class="sheet-overlay"></div>
+
+        <div class="bottom-sheet">
+            <div class="sheet-handle"></div>
+
+            <div class="success-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+            </div>
+
+            <h2 class="sheet-title">PDF Created!</h2>
+            <p class="file-name">Annual_Report_2025_pages_1-5.pdf</p>
+
+            <button class="btn btn-filled">
+                <svg viewBox="0 0 24 24">
+                    <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
+                </svg>
+                Share
+            </button>
+
+            <button class="btn btn-outlined">
+                <svg viewBox="0 0 24 24">
+                    <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/>
+                </svg>
+                Save to Files
+            </button>
+
+            <button class="btn btn-text">Done</button>
+        </div>
+
+        <div class="home-indicator"></div>
+    </div>
+</body>
+</html>

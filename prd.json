@@ -1,0 +1,326 @@
+{
+  "project": "PDF Pages",
+  "branchName": "feature/pdf-extractor",
+  "description": "A privacy-focused PDF page extractor built with Flutter. Users can open a PDF, select specific pages, and create a new PDF with just those pages. All processing is local - no cloud uploads. Target platform: iOS Simulator first, then Android.",
+  "revenueModel": {
+    "free": "3 extractions per month",
+    "premium": "$9.99/year unlimited via RevenueCat"
+  },
+  "designSystem": {
+    "primaryColor": "#E53935",
+    "mockupsPath": "./mockups/",
+    "fontFamily": "SF Pro (iOS system)"
+  },
+  "userStories": [
+    {
+      "id": "PDF-001",
+      "title": "Project scaffolding",
+      "description": "Create the Flutter project with the correct organization and basic dependencies",
+      "acceptanceCriteria": [
+        "Flutter project created with org 'com.quickhitter'",
+        "Project name is 'pdf_pages'",
+        "pubspec.yaml includes: flutter_riverpod, pdfx, pdf, file_picker, share_plus, path_provider, purchases_flutter, shared_preferences",
+        "Project builds successfully with 'flutter build ios --simulator'",
+        "App launches in iOS Simulator without errors"
+      ],
+      "priority": 1,
+      "complexity": "low",
+      "passes": true,
+      "notes": "Run 'flutter create --org com.quickhitter pdf_pages' then add dependencies. Test with 'flutter run' on iOS Simulator."
+    },
+    {
+      "id": "PDF-002",
+      "title": "iOS permissions and Info.plist",
+      "description": "Configure iOS-specific permissions for document browsing",
+      "acceptanceCriteria": [
+        "Info.plist includes UISupportsDocumentBrowser = true",
+        "Info.plist includes LSSupportsOpeningDocumentsInPlace = true",
+        "Info.plist includes CFBundleDocumentTypes for PDF",
+        "App can be opened from Files app to handle PDFs (test in Simulator)"
+      ],
+      "priority": 2,
+      "complexity": "low",
+      "passes": false,
+      "notes": "See mockups/01-home-screen.html for design reference. iOS Simulator note: Document picker works but 'Open In' from Files requires physical device."
+    },
+    {
+      "id": "PDF-003",
+      "title": "PDF file picker",
+      "description": "Implement file picker to select PDF documents from device",
+      "acceptanceCriteria": [
+        "FilePicker opens when 'Select PDF' button is tapped",
+        "Only PDF files can be selected (filter by extension)",
+        "Selected file path is captured correctly",
+        "Cancel action returns gracefully without errors",
+        "Works in iOS Simulator with sample PDFs"
+      ],
+      "priority": 3,
+      "complexity": "medium",
+      "passes": false,
+      "notes": "Use file_picker package. iOS Simulator note: Add sample PDFs to Simulator via Finder drag-drop to Files app."
+    },
+    {
+      "id": "PDF-004",
+      "title": "PDF document loading service",
+      "description": "Create service to load and parse PDF documents using pdfx",
+      "acceptanceCriteria": [
+        "PdfService class created in lib/core/services/",
+        "loadPdf() method opens PDF and returns page count",
+        "Error handling for invalid/corrupted PDFs",
+        "Document can be closed properly to free memory",
+        "Service works with multi-page PDFs (test with 10+ page document)"
+      ],
+      "priority": 4,
+      "complexity": "medium",
+      "passes": false,
+      "notes": "pdfx uses 1-indexed pages. Keep document reference for thumbnail generation."
+    },
+    {
+      "id": "PDF-005",
+      "title": "Thumbnail generation",
+      "description": "Generate thumbnail images for each PDF page",
+      "acceptanceCriteria": [
+        "generateThumbnail() method renders page at 150px width",
+        "Thumbnails maintain correct aspect ratio",
+        "Thumbnails are returned as Uint8List (PNG bytes)",
+        "Generation is async and doesn't block UI",
+        "Memory usage stays reasonable for large PDFs (check in Xcode Instruments)"
+      ],
+      "priority": 5,
+      "complexity": "medium",
+      "passes": false,
+      "notes": "iOS Simulator performance may be slower than device. Use ~1.4 aspect ratio for A4 pages."
+    },
+    {
+      "id": "PDF-006",
+      "title": "Home screen UI",
+      "description": "Build the home screen with PDF icon, description, and Select PDF button",
+      "acceptanceCriteria": [
+        "UI matches mockups/01-home-screen.html",
+        "PDF icon displayed in colored circle",
+        "Title: 'Extract PDF Pages'",
+        "Subtitle explaining the feature",
+        "Privacy badge with lock icon",
+        "Select PDF button with folder icon",
+        "Settings gear icon in app bar",
+        "Responsive layout works on different iOS device sizes"
+      ],
+      "priority": 6,
+      "complexity": "low",
+      "passes": false,
+      "notes": "Use Material 3 components. Test on iPhone SE, iPhone 15, and iPhone 15 Pro Max in Simulator."
+    },
+    {
+      "id": "PDF-007",
+      "title": "Page grid with thumbnails",
+      "description": "Display loaded PDF pages in a 3-column grid with thumbnails",
+      "acceptanceCriteria": [
+        "UI matches mockups/02-page-grid.html",
+        "3-column grid with 12px spacing",
+        "Each cell shows thumbnail with loading spinner while generating",
+        "Page number badge in bottom-right corner",
+        "Document name in app bar (truncated if too long)",
+        "Close button returns to home screen",
+        "Grid scrolls smoothly with 50+ pages"
+      ],
+      "priority": 7,
+      "complexity": "medium",
+      "passes": false,
+      "notes": "Use GridView.builder for performance. Thumbnails should load progressively."
+    },
+    {
+      "id": "PDF-008",
+      "title": "Tap-to-select pages",
+      "description": "Enable page selection by tapping on thumbnails",
+      "acceptanceCriteria": [
+        "Tapping a page toggles its selection state",
+        "Selected pages show blue border and checkmark badge",
+        "Selection state managed via Riverpod provider",
+        "Haptic feedback on tap (HapticFeedback.lightImpact)",
+        "Multiple pages can be selected",
+        "Selection count shown in badge (e.g., '3 selected')"
+      ],
+      "priority": 8,
+      "complexity": "low",
+      "passes": false,
+      "notes": "iOS Simulator note: Haptic feedback won't work in Simulator, but code should be present."
+    },
+    {
+      "id": "PDF-009",
+      "title": "Range selection dialog",
+      "description": "Dialog to select pages by entering ranges like '1-5, 8, 11-15'",
+      "acceptanceCriteria": [
+        "UI matches mockups/03-range-dialog.html",
+        "Dialog opens from filter icon in selection bar",
+        "Text input accepts format: '1-5, 8, 11-15'",
+        "Parser handles: single pages, ranges, comma-separated",
+        "Invalid input shows error message",
+        "Parsed pages replace current selection",
+        "Cancel closes without changes"
+      ],
+      "priority": 9,
+      "complexity": "medium",
+      "passes": false,
+      "notes": "User enters 1-indexed pages, convert to 0-indexed internally."
+    },
+    {
+      "id": "PDF-010",
+      "title": "Selection controls (all/clear/invert)",
+      "description": "Add selection control buttons: select all, clear, invert",
+      "acceptanceCriteria": [
+        "Select All button selects all pages",
+        "Clear button deselects all pages",
+        "Invert button toggles all selections",
+        "Clear button disabled when no selection",
+        "Page count badge shows total pages",
+        "Selected count badge updates in real-time"
+      ],
+      "priority": 10,
+      "complexity": "low",
+      "passes": false,
+      "notes": "Icons: select_all, deselect, flip. Use IconButton with tooltips."
+    },
+    {
+      "id": "PDF-011",
+      "title": "Page extraction service",
+      "description": "Core functionality to extract selected pages into a new PDF",
+      "acceptanceCriteria": [
+        "extractPages() method creates new PDF from selected pages",
+        "Output PDF opens correctly in Preview/Files app",
+        "Page order matches selection order (sorted ascending)",
+        "High-quality rendering (2x scale for crisp output)",
+        "Temp file created in app's temp directory",
+        "Progress callback for large extractions",
+        "Memory doesn't spike excessively during extraction"
+      ],
+      "priority": 11,
+      "complexity": "high",
+      "passes": false,
+      "notes": "Uses 'pdf' package to create new document. Render each page as image then embed. iOS Simulator: Use Activity Monitor to check memory."
+    },
+    {
+      "id": "PDF-012",
+      "title": "Export/share functionality",
+      "description": "Bottom sheet to share or save the extracted PDF",
+      "acceptanceCriteria": [
+        "UI matches mockups/04-export-sheet.html",
+        "Bottom sheet appears after successful extraction",
+        "Success icon and 'PDF Created!' message",
+        "Generated filename shown",
+        "Share button opens iOS share sheet",
+        "Save to Files opens iOS document picker for saving",
+        "Done button dismisses sheet and returns to home"
+      ],
+      "priority": 12,
+      "complexity": "medium",
+      "passes": false,
+      "notes": "Use share_plus package. iOS Simulator: Share sheet works but some share targets unavailable."
+    },
+    {
+      "id": "PDF-013",
+      "title": "Usage tracking service",
+      "description": "Track free tier extractions (3 per month)",
+      "acceptanceCriteria": [
+        "UsageService stores extraction count in SharedPreferences",
+        "Counter resets at start of each calendar month",
+        "getExtractionCount() returns current month's count",
+        "getRemainingExtractions() returns remaining free extractions",
+        "canExtract() returns false when limit reached",
+        "recordExtraction() increments counter"
+      ],
+      "priority": 13,
+      "complexity": "medium",
+      "passes": false,
+      "notes": "Store 'last_reset_month' as 'YYYY-MM' string to detect month changes."
+    },
+    {
+      "id": "PDF-014",
+      "title": "Paywall UI",
+      "description": "Bottom sheet paywall when free extractions exhausted",
+      "acceptanceCriteria": [
+        "UI matches mockups/05-paywall.html",
+        "Premium icon and 'Upgrade to Premium' title",
+        "Message about exhausted free extractions",
+        "Feature list with icons",
+        "Price display ($9.99/year)",
+        "Upgrade Now button (primary)",
+        "Restore Purchases button (text)",
+        "Reset date info shown at bottom"
+      ],
+      "priority": 14,
+      "complexity": "medium",
+      "passes": false,
+      "notes": "Paywall appears when user tries to extract but canExtract() returns false."
+    },
+    {
+      "id": "PDF-015",
+      "title": "RevenueCat integration",
+      "description": "Connect to RevenueCat for premium subscription",
+      "acceptanceCriteria": [
+        "PurchaseService initializes RevenueCat SDK",
+        "isPremium stream updates when entitlement changes",
+        "purchasePremium() initiates purchase flow",
+        "restorePurchases() restores previous purchases",
+        "getPriceString() returns localized price",
+        "Premium users bypass usage limits",
+        "Works in sandbox mode on iOS Simulator"
+      ],
+      "priority": 15,
+      "complexity": "high",
+      "passes": false,
+      "notes": "Use placeholder API keys initially. RevenueCat SDK works in Simulator with sandbox. Entitlement ID: 'premium', Product ID: 'premium_annual'."
+    },
+    {
+      "id": "PDF-016",
+      "title": "Encrypted PDF handling",
+      "description": "Gracefully handle password-protected PDFs",
+      "acceptanceCriteria": [
+        "loadPdfSafe() method detects encrypted PDFs",
+        "Clear error message: 'This PDF is password-protected'",
+        "Error dialog shown with OK button",
+        "App doesn't crash on encrypted files",
+        "Error dialog can trigger retry with different file"
+      ],
+      "priority": 16,
+      "complexity": "medium",
+      "passes": false,
+      "notes": "Test with password-protected PDF. pdfx throws on encrypted files - catch and handle."
+    },
+    {
+      "id": "PDF-017",
+      "title": "Settings screen",
+      "description": "Settings page with premium status, restore, and legal links",
+      "acceptanceCriteria": [
+        "UI matches mockups/06-settings.html",
+        "Accessible from gear icon on home screen",
+        "Shows premium badge if subscribed, or upgrade prompt if free",
+        "Restore Purchases row functional",
+        "Privacy Policy link opens URL",
+        "Terms of Use link opens Apple EULA",
+        "About row shows version 1.0.0",
+        "Privacy note at bottom"
+      ],
+      "priority": 17,
+      "complexity": "low",
+      "passes": false,
+      "notes": "Add url_launcher to pubspec for links. Use placeholder URLs initially."
+    },
+    {
+      "id": "PDF-018",
+      "title": "App Store assets preparation",
+      "description": "Prepare icons, splash, and metadata for submission",
+      "acceptanceCriteria": [
+        "App icon configured via flutter_launcher_icons",
+        "Icon matches PDF/extraction theme with red background",
+        "App displays correct name 'PDF Pages'",
+        "Bundle ID set to 'com.quickhitter.pdfpages'",
+        "ITSAppUsesNonExemptEncryption = false in Info.plist",
+        "App builds for release: 'flutter build ios'"
+      ],
+      "priority": 18,
+      "complexity": "low",
+      "passes": false,
+      "notes": "Icon generation requires asset file. Focus on configuration, not design."
+    }
+  ]
+}

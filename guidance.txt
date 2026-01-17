@@ -1,0 +1,66 @@
+# Grandma's Guidance
+
+Last reviewed: Not yet reviewed
+Last story reviewed: None
+
+---
+
+## Current Assessment
+
+This is the initial state before any implementation. Ralph should begin with PDF-001 (Project scaffolding) and follow the instructions in `prompt-supervised.md`.
+
+The PRD contains 18 user stories to implement in priority order. HTML mockups are available in the `./mockups/` directory for UI reference.
+
+## Guidance for First Iteration
+
+### For PDF-001: Project Scaffolding
+
+1. **Create the Flutter project correctly:**
+   ```bash
+   flutter create --org com.quickhitter pdf_pages
+   cd pdf_pages
+   ```
+
+2. **Add ALL dependencies at once** to avoid multiple pub get calls:
+   - flutter_riverpod: ^2.4.9
+   - pdfx: ^2.6.0
+   - pdf: ^3.10.8
+   - file_picker: ^8.0.0
+   - share_plus: ^7.2.2
+   - path_provider: ^2.1.2
+   - purchases_flutter: ^6.29.0
+   - shared_preferences: ^2.2.2
+
+3. **Test on iOS Simulator immediately:**
+   ```bash
+   flutter run
+   ```
+   The app should launch with the default Flutter counter screen.
+
+4. **Verify build succeeds:**
+   ```bash
+   flutter build ios --simulator
+   ```
+
+### iOS Simulator Setup
+- Make sure Xcode is installed and command-line tools configured
+- Run `open -a Simulator` to launch Simulator app
+- Default device (iPhone 15) is fine for initial testing
+
+### Common First-Iteration Mistakes to Avoid
+- Don't skip the iOS Simulator test
+- Don't add custom code yet - just scaffolding
+- Don't forget to commit with proper message format
+- Don't mark story as passed until ALL acceptance criteria verified
+
+## Patterns Noticed
+
+*No patterns yet - this is iteration 0.*
+
+## History
+
+*No history yet - awaiting first iteration.*
+
+---
+
+*Guidance last updated: Initial setup*

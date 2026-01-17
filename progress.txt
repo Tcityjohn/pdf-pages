@@ -1,0 +1,57 @@
+# PDF Pages - Implementation Progress
+
+This file tracks Ralph's implementation progress across iterations. Each entry documents what was built, patterns discovered, and learnings for future iterations.
+
+---
+
+## Codebase Patterns
+
+*This section is updated as patterns emerge. Reference this before implementing.*
+
+### Project Structure
+```
+lib/
+├── main.dart              # Entry point, service initialization
+├── app.dart               # MaterialApp configuration
+├── core/
+│   ├── models/            # Data models (PdfDocumentModel, etc.)
+│   ├── services/          # Business logic (PdfService, UsageService, PurchaseService)
+│   └── providers/         # Riverpod providers
+├── features/
+│   └── extractor/
+│       └── presentation/
+│           ├── screens/   # Full screens (HomeScreen, ExtractorScreen)
+│           └── widgets/   # Reusable widgets (PageThumbnail, RangeDialog)
+└── shared/
+    └── widgets/           # App-wide widgets (Paywall, UsageBanner)
+```
+
+### State Management Pattern
+- Use `StateNotifierProvider` for complex state (document, extraction)
+- Use `StateProvider` for simple values (selectedPages, isLoading)
+- Use `Provider` for services (pdfService, usageService)
+
+### Color Constants
+```dart
+const primaryColor = Color(0xFFE53935);
+const primaryDark = Color(0xFFC62828);
+const primaryContainer = Color(0xFFFFCDD2);
+```
+
+### Common Imports
+```dart
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/providers/app_providers.dart';
+```
+
+---
+
+## Implementation Log
+
+*Append new entries below. Never delete previous entries.*
+
+---
+
+### [Awaiting first iteration]
+
+No implementations yet. Ralph will begin with PDF-001: Project scaffolding.
