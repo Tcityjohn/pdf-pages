@@ -1,5 +1,9 @@
+import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart' hide PdfDocument;
+import 'package:pdf/widgets.dart' as pw;
 import 'package:pdfx/pdfx.dart';
 
 /// Service for loading and managing PDF documents
@@ -78,6 +82,85 @@ class PdfService {
       return pageImage!.bytes;
     } finally {
       await page.close(); // Always close to free memory
+    }
+  }
+
+  /// Extracts selected pages into a new PDF document
+  /// [pageNumbers] - Set of 1-indexed page numbers to extract
+  /// [onProgress] - Optional callback for progress updates (current, total)
+  /// Returns the file path of the created PDF in the temp directory
+  /// Throws [PdfLoadException] if extraction fails
+  Future<String> extractPages(
+    Set<int> pageNumbers, {
+    void Function(int current, int total)? onProgress,
+  }) async {
+    if (_currentDocument == null) {
+      throw PdfLoadException('No document loaded');
+    }
+
+    if (pageNumbers.isEmpty) {
+      throw PdfLoadException('No pages selected for extraction');
+    }
+
+    try {
+      // Sort pages in ascending order
+      final sortedPages = pageNumbers.toList()..sort();
+
+      // Create new PDF document using the pdf package
+      final pdf = pw.Document();
+
+      // Process pages one at a time for memory efficiency
+      for (int i = 0; i < sortedPages.length; i++) {
+        final pageNumber = sortedPages[i];
+
+        // Report progress
+        onProgress?.call(i + 1, sortedPages.length);
+
+        // Render page at 2x quality for crisp output
+        // Using 300x424 for ~1.4 aspect ratio (A4)
+        final page = await _currentDocument!.getPage(pageNumber);
+        try {
+          final pageImage = await page.render(
+            width: 300,
+            height: 424,
+            format: PdfPageImageFormat.png,
+          );
+
+          if (pageImage == null || pageImage.bytes.isEmpty) {
+            throw PdfLoadException('Failed to render page $pageNumber');
+          }
+
+          // Create memory image from rendered bytes
+          final memoryImage = pw.MemoryImage(pageImage.bytes);
+
+          // Add page to new PDF
+          pdf.addPage(
+            pw.Page(
+              pageFormat: PdfPageFormat.a4,
+              build: (context) => pw.Center(
+                child: pw.Image(memoryImage),
+              ),
+            ),
+          );
+        } finally {
+          await page.close(); // Free memory after each page
+        }
+      }
+
+      // Save to temp directory with unique filename
+      final tempDir = await getTemporaryDirectory();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final outputPath = '${tempDir.path}/extracted_$timestamp.pdf';
+
+      final file = File(outputPath);
+      await file.writeAsBytes(await pdf.save());
+
+      return outputPath;
+    } catch (e) {
+      if (e is PdfLoadException) {
+        rethrow;
+      }
+      throw PdfLoadException('Failed to extract pages: ${e.toString()}');
     }
   }
 }
