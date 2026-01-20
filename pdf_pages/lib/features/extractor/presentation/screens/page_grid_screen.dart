@@ -1,8 +1,9 @@
-// Removing unnecessary import
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/pdf_service.dart';
+import '../../../../core/services/usage_service.dart';
+import '../../../../core/widgets/shared_ui.dart';
 import '../../../providers/selection_provider.dart';
 import '../widgets/range_dialog.dart';
 import '../widgets/export_sheet.dart';
@@ -11,12 +12,14 @@ import '../widgets/export_sheet.dart';
 /// Users can view all pages from the loaded PDF document
 class PageGridScreen extends ConsumerStatefulWidget {
   final PdfService pdfService;
+  final UsageService usageService;
   final String documentName;
   final int pageCount;
 
   const PageGridScreen({
     super.key,
     required this.pdfService,
+    required this.usageService,
     required this.documentName,
     required this.pageCount,
   });
@@ -117,6 +120,21 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
     final selectedPages = ref.read(selectedPagesProvider);
     if (selectedPages.isEmpty) return;
 
+    // Check usage limits before proceeding
+    try {
+      final canExtract = await widget.usageService.canExtract();
+      if (!canExtract) {
+        // Show limit reached dialog
+        if (mounted) {
+          await _showUsageLimitDialog();
+        }
+        return;
+      }
+    } catch (e) {
+      debugPrint('Error checking usage limits: $e');
+      // Continue with extraction if usage service fails
+    }
+
     setState(() => _isExtracting = true);
 
     try {
@@ -127,6 +145,14 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
           debugPrint('Extracting page $current of $total');
         },
       );
+
+      // Record the successful extraction
+      try {
+        await widget.usageService.recordExtraction();
+      } catch (e) {
+        debugPrint('Error recording extraction: $e');
+        // Don't fail the extraction if usage tracking fails
+      }
 
       if (mounted) {
         setState(() => _isExtracting = false);
@@ -153,6 +179,31 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
     }
   }
 
+  /// Show dialog when usage limit is reached
+  Future<void> _showUsageLimitDialog() async {
+    final remaining = await widget.usageService.getRemainingExtractions();
+    final nextReset = widget.usageService.getNextResetDate();
+    final resetDateStr = '${nextReset.month}/${nextReset.day}/${nextReset.year}';
+
+    if (mounted) {
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Extraction Limit Reached'),
+          content: Text(
+            'You have used all $remaining free extractions this month. Your limit will reset on $resetDateStr.\n\nUpgrade to Premium for unlimited extractions.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   /// Show the export bottom sheet after successful extraction
   Future<void> _showExportSheet(String extractedFilePath) async {
     final selectedPages = ref.read(selectedPagesProvider);
@@ -176,12 +227,12 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFAFAFA),
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          icon: const Icon(Icons.close, color: AppColors.textPrimary),
           onPressed: () {
             Navigator.of(context).pop();
           },
@@ -191,6 +242,7 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
           style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
           ),
           overflow: TextOverflow.ellipsis,
         ),
@@ -198,20 +250,20 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
           preferredSize: const Size.fromHeight(1),
           child: Container(
             height: 1,
-            color: const Color(0xFFE0E0E0), // Outline color
+            color: Colors.black.withOpacity(0.06),
           ),
         ),
       ),
       body: Column(
         children: [
-          // Selection bar
+          // Selection bar - simplified styling
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: const BoxDecoration(
-              color: Color(0xFFEEEEEE), // Surface container high
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
               border: Border(
                 bottom: BorderSide(
-                  color: Color(0xFFE0E0E0), // Outline
+                  color: Colors.black.withOpacity(0.06),
                   width: 1,
                 ),
               ),
@@ -221,9 +273,9 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
                 // Page count badge
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFCDD2), // Primary container
+                    color: AppColors.primaryPale,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
@@ -231,7 +283,7 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFFC62828), // Primary dark
+                      color: AppColors.primary,
                     ),
                   ),
                 ),
@@ -243,9 +295,9 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
                     final selectedPages = ref.watch(selectedPagesProvider);
                     return selectedPages.isNotEmpty
                       ? Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE3F2FD), // Tertiary container
+                            color: const Color(0xFFE3F2FD),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Text(
@@ -253,7 +305,7 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: Color(0xFF1565C0), // Dark blue for badge text
+                              color: Color(0xFF1565C0),
                             ),
                           ),
                         )
@@ -333,31 +385,17 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
 
                 const SizedBox(width: 8),
 
-                // Extract button
+                // Extract button - black pill style
                 Consumer(
                   builder: (context, ref, child) {
                     final selectedPages = ref.watch(selectedPagesProvider);
-                    return FilledButton.icon(
+                    return AppButtonCompact(
+                      label: _isExtracting ? 'Extracting...' : 'Extract',
+                      icon: _isExtracting ? null : Icons.file_download,
                       onPressed: selectedPages.isNotEmpty && !_isExtracting
                           ? _extractPages
                           : null,
-                      icon: _isExtracting
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Icon(Icons.file_download),
-                      label: Text(_isExtracting ? 'Extracting...' : 'Extract'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFE53935), // Primary color
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        minimumSize: const Size(0, 36),
-                      ),
+                      isLoading: _isExtracting,
                     );
                   },
                 ),
@@ -423,22 +461,22 @@ class _PageThumbnailWidget extends ConsumerWidget {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F5), // Surface container
+          color: const Color(0xFFF5F5F5),
           borderRadius: BorderRadius.circular(8),
           border: isSelected
             ? Border.all(
-                color: const Color(0xFFE53935), // Primary color
+                color: AppColors.primary,
                 width: 3,
                 style: BorderStyle.solid,
               )
             : Border.all(
-                color: const Color(0xFFE0E0E0), // Outline
+                color: const Color(0xFFE0E0E0),
                 width: 1,
               ),
           boxShadow: isSelected
             ? [
                 BoxShadow(
-                  color: const Color(0xFFE53935).withValues(alpha: 76),
+                  color: AppColors.primary.withValues(alpha: 76),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -458,11 +496,11 @@ class _PageThumbnailWidget extends ConsumerWidget {
                   ),
                 )
               else if (isLoading)
-                const Center(
+                Center(
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      Color(0xFFE53935),
+                      AppColors.primary,
                     ),
                   ),
                 )
@@ -505,8 +543,8 @@ class _PageThumbnailWidget extends ConsumerWidget {
                   child: Container(
                     width: 24,
                     height: 24,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE53935), // Primary color
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),
                     child: const Center(

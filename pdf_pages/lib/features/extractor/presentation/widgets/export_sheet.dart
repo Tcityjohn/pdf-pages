@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
+import '../../../../core/widgets/shared_ui.dart';
 
 /// Bottom sheet widget that appears after successful PDF extraction
 /// Allows user to share or save the extracted PDF file
@@ -122,10 +123,10 @@ class ExportSheet extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: const Color(0xFFE0E0E0), // Outline color
+                color: Colors.black.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(2),
               ),
-              margin: const EdgeInsets.only(bottom: 20),
+              margin: const EdgeInsets.only(bottom: 24),
             ),
 
             // Success icon (80x80 green circle with checkmark)
@@ -134,14 +135,14 @@ class ExportSheet extends StatelessWidget {
               height: 80,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: const BoxDecoration(
-                color: Color(0xFFE8F5E9), // Success container
+                color: AppColors.successContainer,
                 shape: BoxShape.circle,
               ),
               child: const Center(
                 child: Icon(
                   Icons.check,
                   size: 48,
-                  color: Color(0xFF4CAF50), // Success color
+                  color: AppColors.success,
                 ),
               ),
             ),
@@ -152,7 +153,7 @@ class ExportSheet extends StatelessWidget {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF212121), // On-surface
+                color: AppColors.textPrimary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -162,40 +163,25 @@ class ExportSheet extends StatelessWidget {
             // Filename
             Text(
               displayName,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: Color(0xFF757575), // On-surface-variant
+                color: AppColors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
 
-            const SizedBox(height: 28),
+            const SizedBox(height: 32),
 
-            // Share button (filled primary red with share icon)
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _sharePdf,
-                icon: const Icon(Icons.share),
-                label: const Text('Share'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFE53935), // Primary
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
+            // Share button (black pill - primary action)
+            AppButton(
+              label: 'Share',
+              icon: Icons.share,
+              onPressed: _sharePdf,
             ),
 
             const SizedBox(height: 12),
 
-            // Save to Files button (outlined primary red with folder icon)
+            // Save to Files button (outlined style)
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -203,9 +189,9 @@ class ExportSheet extends StatelessWidget {
                 icon: const Icon(Icons.folder),
                 label: const Text('Save to Files'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFFE53935), // Primary
-                  side: const BorderSide(
-                    color: Color(0xFFE53935), // Primary
+                  foregroundColor: AppColors.textPrimary,
+                  side: BorderSide(
+                    color: Colors.black.withOpacity(0.2),
                     width: 1,
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -213,30 +199,26 @@ class ExportSheet extends StatelessWidget {
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: const StadiumBorder(),
                 ),
               ),
             ),
 
             const SizedBox(height: 12),
 
-            // Done button (text button, gray color)
+            // Done button (text button)
             SizedBox(
               width: double.infinity,
               child: TextButton(
                 onPressed: () => _handleDone(context),
                 style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF757575), // On-surface-variant
+                  foregroundColor: AppColors.textSecondary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   textStyle: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: const StadiumBorder(),
                 ),
                 child: const Text('Done'),
               ),

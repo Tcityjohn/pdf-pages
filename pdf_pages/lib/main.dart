@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'core/services/pdf_service.dart';
+import 'core/services/usage_service.dart';
+import 'core/widgets/shared_ui.dart';
 import 'features/extractor/presentation/screens/page_grid_screen.dart';
 
 void main() {
@@ -16,7 +18,16 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'PDF Pages',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFE53935)),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          brightness: Brightness.light,
+        ),
+        scaffoldBackgroundColor: Colors.transparent,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          foregroundColor: AppColors.textPrimary,
+        ),
         useMaterial3: true,
       ),
       home: const HomePage(),
@@ -33,8 +44,38 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final PdfService _pdfService = PdfService();
+  final UsageService _usageService = UsageService();
   String? _errorMessage;
   bool _isPickingFile = false;
+  bool _usageServiceInitialized = false;
+  int _remainingExtractions = 3; // Default value until loaded
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeUsageService();
+  }
+
+  Future<void> _initializeUsageService() async {
+    try {
+      await _usageService.initialize();
+      if (mounted) {
+        final remaining = await _usageService.getRemainingExtractions();
+        setState(() {
+          _usageServiceInitialized = true;
+          _remainingExtractions = remaining;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error initializing usage service: $e');
+      // Continue with default values if service fails
+      if (mounted) {
+        setState(() {
+          _usageServiceInitialized = true;
+        });
+      }
+    }
+  }
 
   Future<void> _pickPdfFile() async {
     setState(() {
@@ -68,11 +109,20 @@ class _HomePageState extends State<HomePage> {
               MaterialPageRoute(
                 builder: (context) => PageGridScreen(
                   pdfService: _pdfService,
+                  usageService: _usageService,
                   documentName: fileName,
                   pageCount: pageCount,
                 ),
               ),
             );
+
+            // Refresh usage data when returning from page grid
+            if (_usageServiceInitialized) {
+              final remaining = await _usageService.getRemainingExtractions();
+              setState(() {
+                _remainingExtractions = remaining;
+              });
+            }
           }
         } on PdfLoadException catch (e) {
           setState(() {
@@ -103,99 +153,85 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+    return GradientScaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFAFAFA),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          'PDF Pages',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const Icon(Icons.settings, color: Colors.white),
             onPressed: () {
               // Settings functionality will be added in PDF-017
             },
           ),
         ],
       ),
-      body: SafeArea(
+      child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 32.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Spacer(),
+              const Spacer(flex: 2),
 
-              // PDF icon in colored circle
-              Container(
-                width: 128,
-                height: 128,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFCDD2), // Primary container
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.picture_as_pdf,
-                  size: 64,
-                  color: Color(0xFFE53935),
+              // Typography hierarchy - Soft Minimal style
+              Text(
+                'Select a PDF',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withOpacity(0.85),
                 ),
               ),
-              const SizedBox(height: 32),
-
-              // Title
+              const SizedBox(height: 8),
               const Text(
-                'Extract PDF Pages',
+                'Extract Pages',
                 style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 42,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -1,
+                  color: Colors.white,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
 
               // Subtitle
-              const Text(
+              Text(
                 'Select specific pages from any PDF\nand save them as a new document',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Color(0xFF757575),
+                  color: Colors.white.withOpacity(0.8),
                   height: 1.4,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
 
-              // Privacy badge
+              const Spacer(flex: 1),
+
+              // Privacy badge - minimal style
               Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9), // Tertiary container
-                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(24),
                 ),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
+                  horizontal: 16,
+                  vertical: 8,
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.lock_outline,
                       size: 16,
-                      color: Color(0xFF2E7D32),
+                      color: Colors.white.withOpacity(0.9),
                     ),
-                    SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Text(
                       'Your documents never leave your device',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Color(0xFF2E7D32),
+                        color: Colors.white.withOpacity(0.9),
                       ),
                     ),
                   ],
@@ -203,126 +239,90 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 24),
 
-              // Usage banner
+              // Usage banner - subtle style
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F5), // Surface container
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(0xFFE0E0E0), // Outline
-                  ),
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 12,
+                  vertical: 14,
                 ),
                 child: Row(
                   children: [
                     // Usage dots
                     Row(
                       children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Color(0xFFE53935),
+                        for (int i = 0; i < 3; i++)
+                          Padding(
+                            padding: EdgeInsets.only(right: i < 2 ? 6 : 0),
+                            child: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: i < _remainingExtractions
+                                    ? Colors.white
+                                    : Colors.white.withOpacity(0.3),
+                              ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 4),
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Color(0xFFE53935),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Color(0xFFE53935),
-                          ),
-                        ),
                       ],
                     ),
-                    const SizedBox(width: 8),
-                    const Expanded(
+                    const SizedBox(width: 12),
+                    Expanded(
                       child: Text(
-                        '3 free extractions left',
+                        '$_remainingExtractions free extractions left',
                         style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF757575),
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.9),
                         ),
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right,
-                      size: 16,
-                      color: Color(0xFF757575),
+                      size: 18,
+                      color: Colors.white.withOpacity(0.7),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
 
-              // Select PDF button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isPickingFile ? null : _pickPdfFile,
-                  icon: const Icon(
-                    Icons.folder_open,
-                    size: 20,
-                  ),
-                  label: Text(
-                    _isPickingFile ? 'Opening...' : 'Select PDF',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE53935),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
+              const Spacer(flex: 1),
+
+              // Black pill CTA button
+              AppButton(
+                label: _isPickingFile ? 'Opening...' : 'Select PDF',
+                onPressed: _isPickingFile ? null : _pickPdfFile,
+                isLoading: _isPickingFile,
               ),
 
-              const Spacer(),
+              const SizedBox(height: 24),
 
-              // Display error message (moved to bottom but still shown)
+              // Display error message
               if (_errorMessage != null)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.red.shade200,
+                      color: AppColors.primary.withOpacity(0.3),
                     ),
                   ),
                   child: Text(
                     _errorMessage!,
                     style: TextStyle(
-                      color: Colors.red.shade900,
+                      color: AppColors.primary,
                       fontSize: 14,
                     ),
                   ),
                 ),
+
+              const Spacer(flex: 1),
             ],
           ),
         ),
