@@ -45,6 +45,14 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>PDF Pages uses speech recognition to select pages by voice.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>PDF Pages needs microphone access for voice commands.</string>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>com.pdfpages.extractPages</string>
+	</array>
 	<key>UISupportsDocumentBrowser</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>

@@ -5,8 +5,15 @@ import '../../../../core/services/pdf_service.dart';
 import '../../../../core/services/usage_service.dart';
 import '../../../../core/widgets/shared_ui.dart';
 import '../../../providers/selection_provider.dart';
+import '../../../providers/page_order_provider.dart';
 import '../widgets/range_dialog.dart';
+import 'reorder_screen.dart';
 import '../widgets/export_sheet.dart';
+import '../widgets/preset_chips.dart';
+import '../widgets/page_preview_dialog.dart';
+import '../widgets/voice_input_sheet.dart';
+import '../../../../core/services/speech_service.dart';
+import '../../../../core/services/siri_service.dart';
 
 /// Screen that displays PDF pages in a 3-column grid with thumbnails
 /// Users can view all pages from the loaded PDF document
@@ -38,11 +45,26 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
   // Track extraction state
   bool _isExtracting = false;
 
+  // Speech service for voice page selection
+  late final SpeechService _speechService;
+
+  // Siri service for shortcuts
+  late final SiriService _siriService;
+
   @override
   void initState() {
     super.initState();
+    _speechService = SpeechService();
+    _siriService = SiriService();
     // Start loading thumbnails progressively
     _loadThumbnailsProgressively();
+  }
+
+  @override
+  void dispose() {
+    _speechService.dispose();
+    _siriService.dispose();
+    super.dispose();
   }
 
   /// Load thumbnails progressively to avoid blocking the UI
@@ -138,8 +160,12 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
     setState(() => _isExtracting = true);
 
     try {
+      // Get custom order if set
+      final customOrder = ref.read(pageOrderProvider);
+
       final extractedPath = await widget.pdfService.extractPages(
         selectedPages,
+        customOrder: customOrder,
         onProgress: (current, total) {
           // Progress callback - could show progress dialog in future
           debugPrint('Extracting page $current of $total');
@@ -152,6 +178,14 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
       } catch (e) {
         debugPrint('Error recording extraction: $e');
         // Don't fail the extraction if usage tracking fails
+      }
+
+      // Donate Siri Shortcut for this type of extraction
+      try {
+        await _siriService.donateAfterExtraction(selectedPages, widget.pageCount);
+      } catch (e) {
+        debugPrint('Error donating Siri shortcut: $e');
+        // Don't fail the extraction if Siri donation fails
       }
 
       if (mounted) {
@@ -219,6 +253,50 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
         onDone: () {
           // Optional callback when done is pressed
           debugPrint('Export sheet dismissed');
+        },
+      ),
+    );
+  }
+
+  /// Show the reorder screen for dragging pages
+  Future<void> _showReorderScreen() async {
+    final selectedPages = ref.read(selectedPagesProvider);
+    if (selectedPages.length < 2) return;
+
+    // Initialize order from current selection (sorted or existing custom order)
+    final currentOrder = ref.read(pageOrderProvider);
+    final initialOrder = currentOrder != null &&
+            currentOrder.toSet().containsAll(selectedPages) &&
+            selectedPages.containsAll(currentOrder.toSet())
+        ? currentOrder
+        : (selectedPages.toList()..sort());
+
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => ReorderScreen(
+          pdfService: widget.pdfService,
+          initialOrder: initialOrder,
+        ),
+      ),
+    );
+
+    // If cancelled (false or null), clear custom order
+    if (result != true) {
+      ref.read(pageOrderProvider.notifier).clearCustomOrder();
+    }
+  }
+
+  /// Show the voice input sheet for voice-based page selection
+  void _showVoiceInputSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => VoiceInputSheet(
+        speechService: _speechService,
+        pageCount: widget.pageCount,
+        onPagesSelected: (pages) {
+          ref.read(selectedPagesProvider.notifier).setSelection(pages);
         },
       ),
     );
@@ -315,6 +393,19 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
 
                 const Spacer(),
 
+                // Voice input button
+                IconButton(
+                  onPressed: () => _showVoiceInputSheet(),
+                  icon: const Icon(Icons.mic),
+                  iconSize: 20,
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  tooltip: 'Voice selection',
+                ),
+
                 // Filter/range selection button
                 IconButton(
                   onPressed: () => _showRangeDialog(),
@@ -385,6 +476,38 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
 
                 const SizedBox(width: 8),
 
+                // Reorder button - only visible when 2+ pages selected
+                Consumer(
+                  builder: (context, ref, child) {
+                    final selectedPages = ref.watch(selectedPagesProvider);
+                    final customOrder = ref.watch(pageOrderProvider);
+                    final hasCustomOrder = customOrder != null;
+                    if (selectedPages.length < 2) {
+                      return const SizedBox.shrink();
+                    }
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          onPressed: () => _showReorderScreen(),
+                          icon: Icon(
+                            Icons.reorder,
+                            color: hasCustomOrder ? AppColors.primary : null,
+                          ),
+                          iconSize: 20,
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
+                          ),
+                          tooltip: hasCustomOrder ? 'Custom order set' : 'Reorder pages',
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                    );
+                  },
+                ),
+
                 // Extract button - black pill style
                 Consumer(
                   builder: (context, ref, child) {
@@ -402,6 +525,9 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
               ],
             ),
           ),
+
+          // Preset selection chips
+          PresetChipsBar(pageCount: widget.pageCount),
 
           // Page grid
           Expanded(
@@ -423,6 +549,8 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
                   pageNumber: pageNumber,
                   thumbnail: thumbnail,
                   isLoading: isLoading,
+                  pdfService: widget.pdfService,
+                  totalPages: widget.pageCount,
                 );
               },
             ),
@@ -438,12 +566,68 @@ class _PageThumbnailWidget extends ConsumerWidget {
   final int pageNumber;
   final Uint8List? thumbnail;
   final bool isLoading;
+  final PdfService pdfService;
+  final int totalPages;
 
   const _PageThumbnailWidget({
     required this.pageNumber,
     required this.thumbnail,
     required this.isLoading,
+    required this.pdfService,
+    required this.totalPages,
   });
+
+  /// Show the page preview dialog on long press
+  Future<void> _showPreviewDialog(BuildContext context, WidgetRef ref) async {
+    HapticFeedback.heavyImpact();
+
+    // Show dialog with loading state first
+    Uint8List? previewImage;
+    bool isLoadingPreview = true;
+    final isCurrentlySelected = ref.read(selectedPagesProvider).contains(pageNumber);
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.transparent,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            // Load preview image if not loaded yet
+            if (isLoadingPreview && previewImage == null) {
+              pdfService.generatePreviewThumbnail(pageNumber).then((bytes) {
+                if (context.mounted) {
+                  setDialogState(() {
+                    previewImage = bytes;
+                    isLoadingPreview = false;
+                  });
+                }
+              }).catchError((e) {
+                if (context.mounted) {
+                  setDialogState(() {
+                    isLoadingPreview = false;
+                  });
+                }
+              });
+            }
+
+            return PagePreviewDialog(
+              pageNumber: pageNumber,
+              totalPages: totalPages,
+              previewImage: previewImage,
+              isLoading: isLoadingPreview,
+              isCurrentlySelected: isCurrentlySelected,
+              onSelect: () {
+                ref.read(selectedPagesProvider.notifier).togglePage(pageNumber);
+              },
+              onCancel: () {
+                // No action needed on cancel
+              },
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -459,6 +643,7 @@ class _PageThumbnailWidget extends ConsumerWidget {
         // Toggle page selection
         ref.read(selectedPagesProvider.notifier).togglePage(pageNumber);
       },
+      onLongPress: () => _showPreviewDialog(context, ref),
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFF5F5F5),

@@ -85,13 +85,37 @@ class PdfService {
     }
   }
 
+  /// Generates a larger preview thumbnail for the given page number (1-indexed)
+  /// Returns PNG bytes at 300px width (2x resolution for preview dialog)
+  /// Throws [PdfLoadException] if no document is loaded
+  Future<Uint8List> generatePreviewThumbnail(int pageNumber) async {
+    if (_currentDocument == null) {
+      throw PdfLoadException('No document loaded');
+    }
+
+    final page = await _currentDocument!.getPage(pageNumber);
+    try {
+      // Render at 2x: 300x424 for crisp preview
+      final pageImage = await page.render(
+        width: 300,
+        height: 424,
+        format: PdfPageImageFormat.png,
+      );
+      return pageImage!.bytes;
+    } finally {
+      await page.close(); // Always close to free memory
+    }
+  }
+
   /// Extracts selected pages into a new PDF document
   /// [pageNumbers] - Set of 1-indexed page numbers to extract
+  /// [customOrder] - Optional list specifying the order of pages (if null, ascending order is used)
   /// [onProgress] - Optional callback for progress updates (current, total)
   /// Returns the file path of the created PDF in the temp directory
   /// Throws [PdfLoadException] if extraction fails
   Future<String> extractPages(
     Set<int> pageNumbers, {
+    List<int>? customOrder,
     void Function(int current, int total)? onProgress,
   }) async {
     if (_currentDocument == null) {
@@ -103,8 +127,15 @@ class PdfService {
     }
 
     try {
-      // Sort pages in ascending order
-      final sortedPages = pageNumbers.toList()..sort();
+      // Use custom order if provided and valid, otherwise sort ascending
+      final List<int> sortedPages;
+      if (customOrder != null &&
+          customOrder.toSet().containsAll(pageNumbers) &&
+          pageNumbers.containsAll(customOrder.toSet())) {
+        sortedPages = customOrder;
+      } else {
+        sortedPages = pageNumbers.toList()..sort();
+      }
 
       // Create new PDF document using the pdf package
       final pdf = pw.Document();
