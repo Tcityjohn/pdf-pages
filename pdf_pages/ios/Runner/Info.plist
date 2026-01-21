@@ -49,6 +49,10 @@
 	<string>PDF Pages uses speech recognition to select pages by voice.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>PDF Pages needs microphone access for voice commands.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>PDF Pages needs photo library access to save extracted pages as images.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>com.pdfpages.extractPages</string>
