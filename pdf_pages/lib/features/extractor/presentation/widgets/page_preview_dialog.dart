@@ -38,7 +38,7 @@ class PagePreviewDialog extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             child: Center(
               child: GestureDetector(
                 onTap: () {}, // Prevent tap from closing dialog
@@ -53,7 +53,7 @@ class PagePreviewDialog extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.25),
+                        color: Colors.black.withValues(alpha: 0.25),
                         blurRadius: 30,
                         offset: const Offset(0, 10),
                       ),

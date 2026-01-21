@@ -76,8 +76,8 @@ class AppButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.textPrimary,
         foregroundColor: Colors.white,
-        disabledBackgroundColor: AppColors.textPrimary.withOpacity(0.5),
-        disabledForegroundColor: Colors.white.withOpacity(0.7),
+        disabledBackgroundColor: AppColors.textPrimary.withValues(alpha: 0.5),
+        disabledForegroundColor: Colors.white.withValues(alpha: 0.7),
         shape: const StadiumBorder(),
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
         elevation: 0,
@@ -144,8 +144,8 @@ class AppButtonCompact extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.textPrimary,
         foregroundColor: Colors.white,
-        disabledBackgroundColor: AppColors.textPrimary.withOpacity(0.5),
-        disabledForegroundColor: Colors.white.withOpacity(0.7),
+        disabledBackgroundColor: AppColors.textPrimary.withValues(alpha: 0.5),
+        disabledForegroundColor: Colors.white.withValues(alpha: 0.7),
         shape: const StadiumBorder(),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         elevation: 0,

@@ -123,7 +123,7 @@ class ExportSheet extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(2),
               ),
               margin: const EdgeInsets.only(bottom: 24),
@@ -191,7 +191,7 @@ class ExportSheet extends StatelessWidget {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.textPrimary,
                   side: BorderSide(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     width: 1,
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 16),

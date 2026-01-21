@@ -103,7 +103,7 @@ class _ReorderScreenState extends ConsumerState<ReorderScreen> {
           preferredSize: const Size.fromHeight(1),
           child: Container(
             height: 1,
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
           ),
         ),
       ),
@@ -112,7 +112,7 @@ class _ReorderScreenState extends ConsumerState<ReorderScreen> {
           // Instructions
           Container(
             padding: const EdgeInsets.all(16),
-            color: AppColors.primaryPale.withOpacity(0.3),
+            color: AppColors.primaryPale.withValues(alpha: 0.3),
             child: Row(
               children: [
                 Icon(
@@ -174,6 +174,7 @@ class _ReorderScreenState extends ConsumerState<ReorderScreen> {
                   key: ValueKey(pageNumber),
                   pageNumber: pageNumber,
                   orderIndex: index + 1,
+                  index: index,
                   thumbnail: thumbnail,
                   isLoading: isLoading,
                 );
@@ -193,7 +194,7 @@ class _ReorderScreenState extends ConsumerState<ReorderScreen> {
               color: Colors.white,
               border: Border(
                 top: BorderSide(
-                  color: Colors.black.withOpacity(0.06),
+                  color: Colors.black.withValues(alpha: 0.06),
                   width: 1,
                 ),
               ),
@@ -217,6 +218,7 @@ class _ReorderScreenState extends ConsumerState<ReorderScreen> {
 class _PageReorderTile extends StatelessWidget {
   final int pageNumber;
   final int orderIndex;
+  final int index; // Index in the list for ReorderableDragStartListener
   final Uint8List? thumbnail;
   final bool isLoading;
 
@@ -224,6 +226,7 @@ class _PageReorderTile extends StatelessWidget {
     super.key,
     required this.pageNumber,
     required this.orderIndex,
+    required this.index,
     this.thumbnail,
     this.isLoading = false,
   });
@@ -242,7 +245,7 @@ class _PageReorderTile extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -250,13 +253,16 @@ class _PageReorderTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Drag handle
-          Container(
-            padding: const EdgeInsets.all(8),
-            child: const Icon(
-              Icons.drag_handle,
-              color: AppColors.textSecondary,
-              size: 24,
+          // Drag handle - tap to start dragging immediately
+          ReorderableDragStartListener(
+            index: index,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              child: const Icon(
+                Icons.drag_handle,
+                color: AppColors.textSecondary,
+                size: 24,
+              ),
             ),
           ),
 

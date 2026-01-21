@@ -4,24 +4,27 @@ import 'package:flutter/services.dart';
 import '../../../../core/services/speech_service.dart';
 import '../../../../core/widgets/shared_ui.dart';
 
-/// Bottom sheet for voice-based page selection
-class VoiceInputSheet extends StatefulWidget {
+/// Compact floating bar for voice-based page selection
+/// Doesn't block view of the PDF grid
+class VoiceInputBar extends StatefulWidget {
   final SpeechService speechService;
   final int pageCount;
   final void Function(Set<int> pages) onPagesSelected;
+  final VoidCallback onDismiss;
 
-  const VoiceInputSheet({
+  const VoiceInputBar({
     super.key,
     required this.speechService,
     required this.pageCount,
     required this.onPagesSelected,
+    required this.onDismiss,
   });
 
   @override
-  State<VoiceInputSheet> createState() => _VoiceInputSheetState();
+  State<VoiceInputBar> createState() => _VoiceInputBarState();
 }
 
-class _VoiceInputSheetState extends State<VoiceInputSheet>
+class _VoiceInputBarState extends State<VoiceInputBar>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -44,7 +47,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       duration: const Duration(milliseconds: 1000),
     );
 
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
@@ -99,7 +102,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     if (pages != null && pages.isNotEmpty) {
       HapticFeedback.mediumImpact();
       widget.onPagesSelected(pages);
-      Navigator.of(context).pop();
+      widget.onDismiss();
     }
   }
 
@@ -114,280 +117,240 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    if (!_isAvailable || !_permissionGranted) {
+      return Container(
+        margin: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottomPadding),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              _isAvailable ? Icons.mic_off : Icons.error_outline,
+              color: AppColors.textSecondary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _isAvailable
+                    ? 'Microphone permission required'
+                    : 'Speech not available',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+            IconButton(
+              onPressed: widget.onDismiss,
+              icon: const Icon(Icons.close),
+              iconSize: 20,
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
-      padding: EdgeInsets.fromLTRB(
-        24,
-        24,
-        24,
-        24 + MediaQuery.of(context).padding.bottom,
-      ),
-      decoration: const BoxDecoration(
+      margin: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottomPadding),
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Drag handle
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Title
-          const Text(
-            'Voice Selection',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // Instructions
-          Text(
-            _getInstructionText(),
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
-          ),
-
-          const SizedBox(height: 32),
-
-          // Microphone button with pulse animation
-          if (_permissionGranted && _isAvailable) ...[
-            GestureDetector(
-              onTap: () {
-                if (_state == SpeechState.listening) {
-                  _stopListening();
-                } else {
-                  _startListening();
-                }
-              },
-              child: AnimatedBuilder(
-                animation: _pulseAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _state == SpeechState.listening
-                        ? _pulseAnimation.value
-                        : 1.0,
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: _state == SpeechState.listening
-                            ? AppColors.primary
-                            : AppColors.primaryPale,
-                        shape: BoxShape.circle,
-                        boxShadow: _state == SpeechState.listening
-                            ? [
-                                BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.4),
-                                  blurRadius: 20,
-                                  spreadRadius: 5,
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: Icon(
-                        _state == SpeechState.listening
-                            ? Icons.mic
-                            : Icons.mic_none,
-                        color: _state == SpeechState.listening
-                            ? Colors.white
-                            : AppColors.primary,
-                        size: 36,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Transcription display
-            Container(
-              constraints: const BoxConstraints(minHeight: 60),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: _transcription.isEmpty
-                  ? Text(
-                      _state == SpeechState.listening
-                          ? 'Listening...'
-                          : 'Tap microphone to start',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: AppColors.textSecondary,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    )
-                  : Text(
-                      _transcription,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Parsed result preview
-            if (_parsedPages != null && _parsedPages!.isNotEmpty) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.successContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.check_circle,
-                      color: AppColors.success,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${_parsedPages!.length} page${_parsedPages!.length == 1 ? '' : 's'} recognized',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.success,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            // Example commands
-            _buildExampleCommands(),
-
-            const SizedBox(height: 24),
-
-            // Action buttons
-            Row(
+          // Main bar with mic, transcription, and actions
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+            child: Row(
               children: [
+                // Mic/Stop button - shows STOP when listening
+                GestureDetector(
+                  onTap: () {
+                    if (_state == SpeechState.listening) {
+                      _stopListening();
+                    } else {
+                      _startListening();
+                    }
+                  },
+                  child: _state == SpeechState.listening
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.stop,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                'Stop',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryPale,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.mic_none,
+                            color: AppColors.primary,
+                            size: 24,
+                          ),
+                        ),
+                ),
+
+                const SizedBox(width: 12),
+
+                // Transcription area
                 Expanded(
-                  child: TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.textSecondary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text('Cancel'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _transcription.isEmpty
+                            ? (_state == SpeechState.listening
+                                ? 'Listening...'
+                                : 'Tap mic & say "pages 1 to 5"')
+                            : _transcription,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: _transcription.isEmpty
+                              ? FontWeight.normal
+                              : FontWeight.w500,
+                          color: _transcription.isEmpty
+                              ? AppColors.textSecondary
+                              : AppColors.textPrimary,
+                          fontStyle: _transcription.isEmpty
+                              ? FontStyle.italic
+                              : FontStyle.normal,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (_parsedPages != null && _parsedPages!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_parsedPages!.length} page${_parsedPages!.length == 1 ? '' : 's'} recognized',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.success,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _parsedPages != null && _parsedPages!.isNotEmpty
-                        ? _confirmSelection
-                        : null,
+
+                const SizedBox(width: 8),
+
+                // Close button
+                IconButton(
+                  onPressed: widget.onDismiss,
+                  icon: const Icon(Icons.close),
+                  iconSize: 20,
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                ),
+
+                // Confirm button (only when pages recognized)
+                if (_parsedPages != null && _parsedPages!.isNotEmpty) ...[
+                  const SizedBox(width: 4),
+                  ElevatedButton(
+                    onPressed: _confirmSelection,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.textPrimary,
                       foregroundColor: Colors.white,
-                      disabledBackgroundColor: Colors.grey.shade300,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      elevation: 0,
                     ),
                     child: const Text(
-                      'Select Pages',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                      'Select',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
-          ] else ...[
-            // Permission denied or unavailable
-            Icon(
-              _isAvailable ? Icons.mic_off : Icons.error_outline,
-              size: 48,
-              color: AppColors.textSecondary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _isAvailable
-                  ? 'Microphone permission required'
-                  : 'Speech recognition not available',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 24),
-            AppButton(
-              label: 'Close',
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-          ],
+          ),
         ],
       ),
     );
   }
+}
 
-  String _getInstructionText() {
-    if (!_isAvailable) {
-      return 'Speech recognition is not available on this device';
-    }
-    if (!_permissionGranted) {
-      return 'Please grant microphone access to use voice selection';
-    }
-    return 'Say commands like "pages 1 through 5" or "odd pages"';
-  }
+/// Legacy bottom sheet - kept for reference but replaced by VoiceInputBar
+class VoiceInputSheet extends StatefulWidget {
+  final SpeechService speechService;
+  final int pageCount;
+  final void Function(Set<int> pages) onPagesSelected;
 
-  Widget _buildExampleCommands() {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      alignment: WrapAlignment.center,
-      children: [
-        _buildExampleChip('page 3'),
-        _buildExampleChip('pages 1 to 5'),
-        _buildExampleChip('odd pages'),
-        _buildExampleChip('last page'),
-      ],
-    );
-  }
+  const VoiceInputSheet({
+    super.key,
+    required this.speechService,
+    required this.pageCount,
+    required this.onPagesSelected,
+  });
 
-  Widget _buildExampleChip(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.primaryPale.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primaryPale),
-      ),
-      child: Text(
-        '"$text"',
-        style: TextStyle(
-          fontSize: 12,
-          color: AppColors.primary,
-        ),
-      ),
-    );
+  @override
+  State<VoiceInputSheet> createState() => _VoiceInputSheetState();
+}
+
+class _VoiceInputSheetState extends State<VoiceInputSheet> {
+  @override
+  Widget build(BuildContext context) {
+    // Redirect to use the new bar instead
+    return Container();
   }
 }

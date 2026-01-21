@@ -179,7 +179,7 @@ class _HomePageState extends State<HomePage> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white.withOpacity(0.85),
+                  color: Colors.white.withValues(alpha: 0.85),
                 ),
               ),
               const SizedBox(height: 8),
@@ -200,7 +200,7 @@ class _HomePageState extends State<HomePage> {
                 'Select specific pages from any PDF\nand save them as a new document',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                   height: 1.4,
                 ),
                 textAlign: TextAlign.center,
@@ -211,7 +211,7 @@ class _HomePageState extends State<HomePage> {
               // Privacy badge - minimal style
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(24),
                 ),
                 padding: const EdgeInsets.symmetric(
@@ -224,14 +224,14 @@ class _HomePageState extends State<HomePage> {
                     Icon(
                       Icons.lock_outline,
                       size: 16,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Your documents never leave your device',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                   ],
@@ -243,7 +243,7 @@ class _HomePageState extends State<HomePage> {
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 padding: const EdgeInsets.symmetric(
@@ -265,7 +265,7 @@ class _HomePageState extends State<HomePage> {
                                 shape: BoxShape.circle,
                                 color: i < _remainingExtractions
                                     ? Colors.white
-                                    : Colors.white.withOpacity(0.3),
+                                    : Colors.white.withValues(alpha: 0.3),
                               ),
                             ),
                           ),
@@ -277,14 +277,14 @@ class _HomePageState extends State<HomePage> {
                         '$_remainingExtractions free extractions left',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
                     ),
                     Icon(
                       Icons.chevron_right,
                       size: 18,
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                     ),
                   ],
                 ),
@@ -310,7 +310,7 @@ class _HomePageState extends State<HomePage> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Text(

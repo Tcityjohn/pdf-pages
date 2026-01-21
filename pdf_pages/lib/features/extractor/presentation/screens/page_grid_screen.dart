@@ -45,6 +45,9 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
   // Track extraction state
   bool _isExtracting = false;
 
+  // Track voice input bar visibility
+  bool _showVoiceInput = false;
+
   // Speech service for voice page selection
   late final SpeechService _speechService;
 
@@ -286,26 +289,76 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
     }
   }
 
-  /// Show the voice input sheet for voice-based page selection
-  void _showVoiceInputSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => VoiceInputSheet(
-        speechService: _speechService,
-        pageCount: widget.pageCount,
-        onPagesSelected: (pages) {
-          ref.read(selectedPagesProvider.notifier).setSelection(pages);
-        },
-      ),
-    );
+  /// Toggle the voice input bar
+  void _toggleVoiceInput() {
+    setState(() {
+      _showVoiceInput = !_showVoiceInput;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      bottomNavigationBar: Consumer(
+        builder: (context, ref, child) {
+          final selectedPages = ref.watch(selectedPagesProvider);
+          if (selectedPages.isEmpty) return const SizedBox.shrink();
+
+          return Container(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              12 + MediaQuery.of(context).padding.bottom,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                top: BorderSide(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                // Reorder button - only when 2+ pages selected
+                if (selectedPages.length >= 2) ...[
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _showReorderScreen,
+                      icon: const Icon(Icons.reorder),
+                      label: const Text('Reorder'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.textPrimary,
+                        side: BorderSide(
+                          color: Colors.black.withValues(alpha: 0.2),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: const StadiumBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                // Extract button
+                Expanded(
+                  flex: selectedPages.length >= 2 ? 1 : 1,
+                  child: AppButton(
+                    label: _isExtracting
+                        ? 'Extracting...'
+                        : 'Extract ${selectedPages.length} Page${selectedPages.length == 1 ? '' : 's'}',
+                    icon: _isExtracting ? null : Icons.file_download,
+                    onPressed: !_isExtracting ? _extractPages : null,
+                    isLoading: _isExtracting,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -328,7 +381,7 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
           preferredSize: const Size.fromHeight(1),
           child: Container(
             height: 1,
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
           ),
         ),
       ),
@@ -338,10 +391,10 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               border: Border(
                 bottom: BorderSide(
-                  color: Colors.black.withOpacity(0.06),
+                  color: Colors.black.withValues(alpha: 0.06),
                   width: 1,
                 ),
               ),
@@ -395,7 +448,7 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
 
                 // Voice input button
                 IconButton(
-                  onPressed: () => _showVoiceInputSheet(),
+                  onPressed: _toggleVoiceInput,
                   icon: const Icon(Icons.mic),
                   iconSize: 20,
                   padding: const EdgeInsets.all(8),
@@ -474,54 +527,6 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
                   tooltip: 'Invert selection',
                 ),
 
-                const SizedBox(width: 8),
-
-                // Reorder button - only visible when 2+ pages selected
-                Consumer(
-                  builder: (context, ref, child) {
-                    final selectedPages = ref.watch(selectedPagesProvider);
-                    final customOrder = ref.watch(pageOrderProvider);
-                    final hasCustomOrder = customOrder != null;
-                    if (selectedPages.length < 2) {
-                      return const SizedBox.shrink();
-                    }
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          onPressed: () => _showReorderScreen(),
-                          icon: Icon(
-                            Icons.reorder,
-                            color: hasCustomOrder ? AppColors.primary : null,
-                          ),
-                          iconSize: 20,
-                          padding: const EdgeInsets.all(8),
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
-                          ),
-                          tooltip: hasCustomOrder ? 'Custom order set' : 'Reorder pages',
-                        ),
-                        const SizedBox(width: 4),
-                      ],
-                    );
-                  },
-                ),
-
-                // Extract button - black pill style
-                Consumer(
-                  builder: (context, ref, child) {
-                    final selectedPages = ref.watch(selectedPagesProvider);
-                    return AppButtonCompact(
-                      label: _isExtracting ? 'Extracting...' : 'Extract',
-                      icon: _isExtracting ? null : Icons.file_download,
-                      onPressed: selectedPages.isNotEmpty && !_isExtracting
-                          ? _extractPages
-                          : null,
-                      isLoading: _isExtracting,
-                    );
-                  },
-                ),
               ],
             ),
           ),
@@ -531,28 +536,49 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
 
           // Page grid
           Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(12),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.7, // ~1.4 aspect ratio inverted
-              ),
-              itemCount: widget.pageCount,
-              itemBuilder: (context, index) {
-                final pageNumber = index + 1; // 1-indexed
-                final isLoading = _loadingThumbnails.contains(pageNumber);
-                final thumbnail = _thumbnailCache[pageNumber];
+            child: Stack(
+              children: [
+                GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.7, // ~1.4 aspect ratio inverted
+                  ),
+                  itemCount: widget.pageCount,
+                  itemBuilder: (context, index) {
+                    final pageNumber = index + 1; // 1-indexed
+                    final isLoading = _loadingThumbnails.contains(pageNumber);
+                    final thumbnail = _thumbnailCache[pageNumber];
 
-                return _PageThumbnailWidget(
-                  pageNumber: pageNumber,
-                  thumbnail: thumbnail,
-                  isLoading: isLoading,
-                  pdfService: widget.pdfService,
-                  totalPages: widget.pageCount,
-                );
-              },
+                    return _PageThumbnailWidget(
+                      pageNumber: pageNumber,
+                      thumbnail: thumbnail,
+                      isLoading: isLoading,
+                      pdfService: widget.pdfService,
+                      totalPages: widget.pageCount,
+                    );
+                  },
+                ),
+                // Voice input floating bar
+                if (_showVoiceInput)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: VoiceInputBar(
+                      speechService: _speechService,
+                      pageCount: widget.pageCount,
+                      onPagesSelected: (pages) {
+                        ref.read(selectedPagesProvider.notifier).setSelection(pages);
+                      },
+                      onDismiss: () {
+                        setState(() => _showVoiceInput = false);
+                      },
+                    ),
+                  ),
+              ],
             ),
           ),
         ],

@@ -58,7 +58,7 @@ class PresetChipsBar extends ConsumerWidget {
         color: Colors.white,
         border: Border(
           bottom: BorderSide(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             width: 1,
           ),
         ),
@@ -122,7 +122,7 @@ class _PresetChip extends StatelessWidget {
           color: isActive
               ? AppColors.primary
               : isAvailable
-                  ? AppColors.primaryPale.withOpacity(0.5)
+                  ? AppColors.primaryPale.withValues(alpha: 0.5)
                   : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
