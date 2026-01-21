@@ -100,57 +100,69 @@ class SpeechService {
   /// Returns null if the command couldn't be parsed
   Set<int>? parseVoiceCommand(String text, int pageCount) {
     final normalizedText = text.toLowerCase().trim();
+    final Set<int> result = {};
 
-    // Handle "all pages"
-    if (normalizedText.contains('all page')) {
+    // Handle "all pages" or "all"
+    if (normalizedText.contains('all')) {
       return {for (int i = 1; i <= pageCount; i++) i};
     }
 
-    // Handle "odd pages"
-    if (normalizedText.contains('odd page')) {
+    // Handle "odd pages" or "odd"
+    if (normalizedText.contains('odd')) {
       return {for (int i = 1; i <= pageCount; i += 2) i};
     }
 
-    // Handle "even pages"
-    if (normalizedText.contains('even page')) {
+    // Handle "even pages" or "even"
+    if (normalizedText.contains('even')) {
       return {for (int i = 2; i <= pageCount; i += 2) i};
     }
 
-    // Handle "first page"
-    if (normalizedText.contains('first page')) {
+    // Handle "first" or "first page"
+    if (normalizedText.contains('first')) {
       return pageCount >= 1 ? {1} : {};
     }
 
-    // Handle "last page"
-    if (normalizedText.contains('last page')) {
+    // Handle "last" or "last page"
+    if (normalizedText.contains('last')) {
       return pageCount >= 1 ? {pageCount} : {};
     }
 
-    // Handle "pages X through Y" or "pages X to Y"
-    final rangePattern = RegExp(r'page[s]?\s+(\w+)\s+(?:through|to|thru)\s+(\w+)');
-    final rangeMatch = rangePattern.firstMatch(normalizedText);
-    if (rangeMatch != null) {
-      final start = _parseNumber(rangeMatch.group(1)!);
-      final end = _parseNumber(rangeMatch.group(2)!);
-      if (start != null && end != null && start <= end) {
-        return {for (int i = start.clamp(1, pageCount); i <= end.clamp(1, pageCount); i++) i};
+    // Handle ranges: "X through Y", "X to Y", "X thru Y", "X - Y"
+    // More flexible - doesn't require "page" prefix
+    final rangePatterns = [
+      RegExp(r'(\w+)\s+(?:through|to|thru)\s+(\w+)'),
+      RegExp(r'(\d+)\s*[-–]\s*(\d+)'),
+    ];
+
+    for (final pattern in rangePatterns) {
+      final match = pattern.firstMatch(normalizedText);
+      if (match != null) {
+        final start = _parseNumber(match.group(1)!);
+        final end = _parseNumber(match.group(2)!);
+        if (start != null && end != null && start <= end) {
+          return {for (int i = start.clamp(1, pageCount); i <= end.clamp(1, pageCount); i++) i};
+        }
       }
     }
 
-    // Handle "page X" or "page number X"
-    final singlePattern = RegExp(r'page\s*(?:number)?\s*(\w+)');
-    final singleMatch = singlePattern.firstMatch(normalizedText);
-    if (singleMatch != null) {
-      final pageNum = _parseNumber(singleMatch.group(1)!);
-      if (pageNum != null && pageNum >= 1 && pageNum <= pageCount) {
-        return {pageNum};
+    // Handle comma-separated or space-separated lists: "1, 3, 5" or "1 3 5"
+    // Also handles "pages 1 3 and 5" or "page 1 and 3"
+    final cleanedText = normalizedText
+        .replaceAll(RegExp(r'page[s]?'), '')
+        .replaceAll('and', ' ')
+        .replaceAll(',', ' ')
+        .trim();
+
+    final words = cleanedText.split(RegExp(r'\s+'));
+    for (final word in words) {
+      final num = _parseNumber(word);
+      if (num != null && num >= 1 && num <= pageCount) {
+        result.add(num);
       }
     }
 
-    // Handle just a number
-    final justNumber = _parseNumber(normalizedText);
-    if (justNumber != null && justNumber >= 1 && justNumber <= pageCount) {
-      return {justNumber};
+    if (result.isNotEmpty) {
+      return result;
     }
 
     return null;

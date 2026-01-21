@@ -36,15 +36,24 @@ class ExportSheet extends StatelessWidget {
   }
 
   /// Share the PDF using iOS share sheet
-  Future<void> _sharePdf() async {
+  Future<void> _sharePdf(BuildContext context) async {
     try {
+      final box = context.findRenderObject() as RenderBox?;
       await Share.shareXFiles(
         [XFile(extractedFilePath)],
         text: 'PDF Pages extraction',
         subject: 'Extracted PDF Pages',
+        sharePositionOrigin: box != null
+            ? box.localToGlobal(Offset.zero) & box.size
+            : null,
       );
     } catch (e) {
       debugPrint('Error sharing PDF: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to share: $e')),
+        );
+      }
     }
   }
 
@@ -176,7 +185,7 @@ class ExportSheet extends StatelessWidget {
             AppButton(
               label: 'Share',
               icon: Icons.share,
-              onPressed: _sharePdf,
+              onPressed: () => _sharePdf(context),
             ),
 
             const SizedBox(height: 12),
