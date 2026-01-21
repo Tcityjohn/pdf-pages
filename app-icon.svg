@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ECDC4"/>
+      <stop offset="100%" style="stop-color:#2AB7AD"/>
+    </linearGradient>
+    <linearGradient id="docShadow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#000000;stop-opacity:0.1"/>
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:0.2"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background - solid square, iOS clips to rounded shape automatically -->
+  <rect width="1024" height="1024" fill="#3DBDB5"/>
+  <rect width="1024" height="1024" fill="url(#bgGradient)"/>
+
+  <!-- Document shadow -->
+  <rect x="220" y="130" width="590" height="780" rx="48" ry="48" fill="rgba(0,0,0,0.15)" transform="translate(8, 12)"/>
+
+  <!-- Document background -->
+  <rect x="220" y="130" width="590" height="780" rx="48" ry="48" fill="white"/>
+
+  <!-- Page grid - Row 1 -->
+  <rect x="280" y="200" width="230" height="180" rx="20" ry="20" fill="#4ECDC4"/>
+  <rect x="530" y="200" width="230" height="180" rx="20" ry="20" fill="#E8E8E8"/>
+
+  <!-- Page grid - Row 2 -->
+  <rect x="280" y="410" width="230" height="180" rx="20" ry="20" fill="#E8E8E8"/>
+  <rect x="530" y="410" width="230" height="180" rx="20" ry="20" fill="#4ECDC4"/>
+
+  <!-- Page grid - Row 3 -->
+  <rect x="280" y="620" width="230" height="180" rx="20" ry="20" fill="#4ECDC4"/>
+  <rect x="530" y="620" width="230" height="180" rx="20" ry="20" fill="#E8E8E8"/>
+
+  <!-- Checkmarks on selected cells -->
+  <!-- Checkmark 1 (top-left) -->
+  <circle cx="395" cy="290" r="45" fill="white"/>
+  <path d="M365 290 L385 310 L425 265" stroke="#4ECDC4" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Checkmark 2 (middle-right) -->
+  <circle cx="645" cy="500" r="45" fill="white"/>
+  <path d="M615 500 L635 520 L675 475" stroke="#4ECDC4" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Checkmark 3 (bottom-left) -->
+  <circle cx="395" cy="710" r="45" fill="white"/>
+  <path d="M365 710 L385 730 L425 685" stroke="#4ECDC4" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Subtle page lines on unselected cells -->
+  <rect x="555" y="240" width="180" height="8" rx="4" fill="#D0D0D0"/>
+  <rect x="555" y="265" width="140" height="8" rx="4" fill="#D0D0D0"/>
+  <rect x="555" y="290" width="160" height="8" rx="4" fill="#D0D0D0"/>
+
+  <rect x="305" y="450" width="180" height="8" rx="4" fill="#D0D0D0"/>
+  <rect x="305" y="475" width="140" height="8" rx="4" fill="#D0D0D0"/>
+  <rect x="305" y="500" width="160" height="8" rx="4" fill="#D0D0D0"/>
+
+  <rect x="555" y="660" width="180" height="8" rx="4" fill="#D0D0D0"/>
+  <rect x="555" y="685" width="140" height="8" rx="4" fill="#D0D0D0"/>
+  <rect x="555" y="710" width="160" height="8" rx="4" fill="#D0D0D0"/>
+</svg>

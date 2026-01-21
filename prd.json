@@ -195,7 +195,7 @@
       ],
       "priority": 11,
       "complexity": "high",
-      "passes": false,
+      "passes": true,
       "notes": "Uses 'pdf' package to create new document. Render each page as image then embed. iOS Simulator: Use Activity Monitor to check memory."
     },
     {
@@ -213,7 +213,7 @@
       ],
       "priority": 12,
       "complexity": "medium",
-      "passes": false,
+      "passes": true,
       "notes": "Use share_plus package. iOS Simulator: Share sheet works but some share targets unavailable."
     },
     {
@@ -230,7 +230,7 @@
       ],
       "priority": 13,
       "complexity": "medium",
-      "passes": false,
+      "passes": true,
       "notes": "Store 'last_reset_month' as 'YYYY-MM' string to detect month changes."
     },
     {

@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.quickhitter.pdf_pages"
+    namespace = "com.pdfpages1.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.quickhitter.pdf_pages"
+        applicationId = "com.pdfpages1.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

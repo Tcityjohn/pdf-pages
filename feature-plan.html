@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Pages - Feature Plan</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      background: #f8f9fa;
+      color: #1a1a1a;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 18px;
+      color: #666;
+      margin-bottom: 40px;
+    }
+
+    .section {
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .section-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .section-icon.voice { background: #E8F5E9; }
+    .section-icon.tap { background: #E3F2FD; }
+    .section-icon.smart { background: #FFF3E0; }
+    .section-icon.preview { background: #F3E5F5; }
+
+    .section h2 {
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .section h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 24px 0 12px;
+      color: #333;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .feature-card {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid #eee;
+    }
+
+    .feature-card h4 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .tag.easy { background: #E8F5E9; color: #2E7D32; }
+    .tag.medium { background: #FFF3E0; color: #E65100; }
+    .tag.local { background: #E3F2FD; color: #1565C0; }
+
+    .implementation {
+      background: #1a1a1a;
+      color: #fff;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 12px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+
+    .phone-demo {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 32px 0;
+    }
+
+    .phone-frame {
+      width: 280px;
+      height: 560px;
+      background: #fff;
+      border-radius: 36px;
+      box-shadow: 0 15px 50px rgba(0,0,0,0.12);
+      overflow: hidden;
+      border: 8px solid #1a1a1a;
+      position: relative;
+    }
+
+    .notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 24px;
+      background: #1a1a1a;
+      border-radius: 0 0 14px 14px;
+      z-index: 10;
+    }
+
+    .screen-content {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Voice UI Demo */
+    .voice-screen {
+      background: linear-gradient(to bottom, #E63946 0%, #EF6B6B 30%, #F9C4C8 60%, #fff 100%);
+      padding: 40px 20px 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .voice-header {
+      text-align: center;
+      color: white;
+      margin-bottom: 24px;
+    }
+
+    .voice-header h3 {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-bottom: 4px;
+      color: white;
+    }
+
+    .voice-header h2 {
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .voice-bubble {
+      background: white;
+      border-radius: 20px;
+      padding: 16px 20px;
+      margin: 8px 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .voice-bubble.user {
+      background: #1a1a1a;
+      color: white;
+      margin-left: 40px;
+    }
+
+    .voice-bubble.assistant {
+      margin-right: 40px;
+    }
+
+    .voice-bubble p {
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .voice-input {
+      margin-top: auto;
+      background: white;
+      border-radius: 28px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .mic-btn {
+      width: 44px;
+      height: 44px;
+      background: #E63946;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .mic-btn.listening {
+      background: #4CAF50;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .voice-input span {
+      flex: 1;
+      font-size: 14px;
+      color: #666;
+    }
+
+    /* Quick Presets Demo */
+    .presets-screen {
+      background: white;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .presets-header {
+      background: #f8f9fa;
+      padding: 40px 16px 12px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .presets-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin: 0;
+    }
+
+    .preset-chips {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      overflow-x: auto;
+      border-bottom: 1px solid #eee;
+    }
+
+    .preset-chip {
+      white-space: nowrap;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      background: #f0f0f0;
+      color: #1a1a1a;
+      border: 1px solid #ddd;
+    }
+
+    .preset-chip.active {
+      background: #E63946;
+      color: white;
+      border-color: #E63946;
+    }
+
+    .mini-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 12px;
+      align-content: start;
+    }
+
+    .mini-thumb {
+      aspect-ratio: 0.7;
+      background: #f5f5f5;
+      border-radius: 6px;
+      border: 1px solid #e0e0e0;
+      position: relative;
+    }
+
+    .mini-thumb.selected {
+      border: 2px solid #E63946;
+    }
+
+    .mini-thumb .num {
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    /* Preview Demo */
+    .preview-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .preview-card {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      width: 100%;
+      max-width: 220px;
+    }
+
+    .preview-image {
+      background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+      border-radius: 8px;
+      aspect-ratio: 0.7;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+    }
+
+    .preview-image .line {
+      height: 6px;
+      background: #ddd;
+      border-radius: 3px;
+      margin-bottom: 6px;
+    }
+
+    .preview-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .preview-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .preview-btn.select {
+      background: #1a1a1a;
+      color: white;
+    }
+
+    .preview-btn.cancel {
+      background: #f0f0f0;
+      color: #666;
+    }
+
+    .demo-label {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #666;
+      margin-top: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .complexity-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    .complexity-table th,
+    .complexity-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    .complexity-table th {
+      background: #f8f9fa;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #666;
+    }
+
+    .complexity-table td {
+      font-size: 14px;
+    }
+
+    .check { color: #4CAF50; }
+    .cross { color: #f44336; }
+
+    .summary-box {
+      background: linear-gradient(135deg, #E63946 0%, #EF6B6B 100%);
+      color: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 24px;
+    }
+
+    .summary-box h3 {
+      font-size: 20px;
+      margin-bottom: 16px;
+      color: white;
+    }
+
+    .summary-box ul {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .summary-box li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+    }
+
+    .summary-box li::before {
+      content: "✓";
+      width: 20px;
+      height: 20px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PDF Pages — Feature Enhancement Plan</h1>
+    <p class="subtitle">Local-only features that improve UX without requiring backend infrastructure</p>
+
+    <!-- VOICE SELECTION -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon voice">🎤</div>
+        <h2>Voice Page Selection</h2>
+      </div>
+
+      <p>Allow users to select pages by speaking naturally. Uses iOS Speech framework (on-device processing, no cloud).</p>
+
+      <div class="phone-demo">
+        <div>
+          <div class="phone-frame">
+            <div class="notch"></div>
+            <div class="screen-content">
+              <div class="voice-screen">
+                <div class="voice-header">
+                  <h3>Voice Selection</h3>
+                  <h2>Speak your pages</h2>
+                </div>
+
+                <div class="voice-bubble user">
+                  <p>"Select pages 1 through 5 and page 12"</p>
+                </div>
+
+                <div class="voice-bubble assistant">
+                  <p>✓ Selected 6 pages: 1, 2, 3, 4, 5, 12</p>
+                </div>
+
+                <div class="voice-bubble user">
+                  <p>"Also add the last page"</p>
+                </div>
+
+                <div class="voice-bubble assistant">
+                  <p>✓ Added page 24. Now 7 pages selected.</p>
+                </div>
+
+                <div class="voice-input">
+                  <div class="mic-btn listening">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                    </svg>
+                  </div>
+                  <span>Listening...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="demo-label">Voice Input Active</p>
+        </div>
+      </div>
+
+      <h3>Supported Voice Commands</h3>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4>📄 Single Pages</h4>
+          <p>"Select page 5" / "Add page 12" / "Remove page 3"</p>
+          <span class="tag easy">Easy to parse</span>
+        </div>
+        <div class="feature-card">
+          <h4>📑 Ranges</h4>
+          <p>"Pages 1 through 10" / "From 5 to 15" / "First 3 pages"</p>
+          <span class="tag easy">Easy to parse</span>
+        </div>
+        <div class="feature-card">
+          <h4>🔄 Relative</h4>
+          <p>"Last page" / "First page" / "Last 5 pages"</p>
+          <span class="tag easy">Easy to parse</span>
+        </div>
+        <div class="feature-card">
+          <h4>🎯 Special</h4>
+          <p>"Odd pages" / "Even pages" / "All pages"</p>
+          <span class="tag medium">Pattern matching</span>
+        </div>
+      </div>
+
+      <h3>Implementation</h3>
+      <div class="implementation">
+// Uses iOS Speech framework - fully on-device, no network required<br>
+import Speech<br><br>
+
+class VoiceSelectionService {<br>
+&nbsp;&nbsp;private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))<br>
+&nbsp;&nbsp;private var recognitionTask: SFSpeechRecognitionTask?<br><br>
+
+&nbsp;&nbsp;func parseCommand(_ text: String, totalPages: Int) -> Set&lt;Int&gt; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// "pages 1 through 5" → [1, 2, 3, 4, 5]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// "last page" → [totalPages]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;// "odd pages" → [1, 3, 5, ...]<br>
+&nbsp;&nbsp;}<br>
+}
+      </div>
+    </div>
+
+    <!-- QUICK PRESETS -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon tap">⚡</div>
+        <h2>Quick Selection Presets</h2>
+      </div>
+
+      <p>One-tap presets for common page selection patterns. Appears as chips below the toolbar.</p>
+
+      <div class="phone-demo">
+        <div>
+          <div class="phone-frame">
+            <div class="notch"></div>
+            <div class="screen-content">
+              <div class="presets-screen">
+                <div class="presets-header">
+                  <h3>Annual_Report.pdf</h3>
+                </div>
+                <div class="preset-chips">
+                  <div class="preset-chip active">First page</div>
+                  <div class="preset-chip">Last page</div>
+                  <div class="preset-chip">Odd pages</div>
+                  <div class="preset-chip">Even pages</div>
+                  <div class="preset-chip">First 3</div>
+                </div>
+                <div class="mini-grid">
+                  <div class="mini-thumb selected"><span class="num">1</span></div>
+                  <div class="mini-thumb"><span class="num">2</span></div>
+                  <div class="mini-thumb"><span class="num">3</span></div>
+                  <div class="mini-thumb"><span class="num">4</span></div>
+                  <div class="mini-thumb"><span class="num">5</span></div>
+                  <div class="mini-thumb"><span class="num">6</span></div>
+                  <div class="mini-thumb"><span class="num">7</span></div>
+                  <div class="mini-thumb"><span class="num">8</span></div>
+                  <div class="mini-thumb"><span class="num">9</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="demo-label">Quick Presets</p>
+        </div>
+      </div>
+
+      <h3>Preset Options</h3>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4>First page</h4>
+          <p>Selects only page 1. Common for cover pages.</p>
+          <span class="tag easy">Simple</span>
+        </div>
+        <div class="feature-card">
+          <h4>Last page</h4>
+          <p>Selects only the final page. Common for signatures.</p>
+          <span class="tag easy">Simple</span>
+        </div>
+        <div class="feature-card">
+          <h4>Odd pages</h4>
+          <p>Pages 1, 3, 5... Useful for duplex printing issues.</p>
+          <span class="tag easy">Simple</span>
+        </div>
+        <div class="feature-card">
+          <h4>Even pages</h4>
+          <p>Pages 2, 4, 6... Companion to odd pages.</p>
+          <span class="tag easy">Simple</span>
+        </div>
+        <div class="feature-card">
+          <h4>First 3 / Last 3</h4>
+          <p>Quick selection of beginning or end sections.</p>
+          <span class="tag easy">Simple</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE PREVIEW -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon preview">🔍</div>
+        <h2>Long-Press Page Preview</h2>
+      </div>
+
+      <p>Long-press any thumbnail to see a larger preview before deciding to select it.</p>
+
+      <div class="phone-demo">
+        <div>
+          <div class="phone-frame">
+            <div class="notch"></div>
+            <div class="screen-content">
+              <div class="presets-screen" style="opacity: 0.3;">
+                <div class="presets-header">
+                  <h3>Annual_Report.pdf</h3>
+                </div>
+                <div class="mini-grid">
+                  <div class="mini-thumb"><span class="num">1</span></div>
+                  <div class="mini-thumb"><span class="num">2</span></div>
+                  <div class="mini-thumb"><span class="num">3</span></div>
+                  <div class="mini-thumb"><span class="num">4</span></div>
+                  <div class="mini-thumb"><span class="num">5</span></div>
+                  <div class="mini-thumb"><span class="num">6</span></div>
+                </div>
+              </div>
+              <div class="preview-overlay">
+                <div class="preview-card">
+                  <div class="preview-image">
+                    <div class="line" style="width: 80%"></div>
+                    <div class="line" style="width: 100%"></div>
+                    <div class="line" style="width: 60%"></div>
+                    <div class="line" style="width: 90%"></div>
+                    <div class="line" style="width: 70%"></div>
+                  </div>
+                  <p style="font-size: 13px; color: #666; margin-bottom: 12px; text-align: center;">Page 3 of 24</p>
+                  <div class="preview-actions">
+                    <div class="preview-btn cancel">Cancel</div>
+                    <div class="preview-btn select">Select</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="demo-label">Long-Press Preview</p>
+        </div>
+      </div>
+
+      <h3>Implementation</h3>
+      <div class="implementation">
+// Flutter GestureDetector with onLongPress<br>
+GestureDetector(<br>
+&nbsp;&nbsp;onLongPress: () => _showPagePreview(context, pageNumber),<br>
+&nbsp;&nbsp;child: PageThumbnail(...),<br>
+)<br><br>
+
+// Renders page at 2x resolution for preview<br>
+// Uses existing pdfService.generateThumbnail with larger dimensions
+      </div>
+    </div>
+
+    <!-- FEATURE COMPARISON TABLE -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon smart">📋</div>
+        <h2>Feature Comparison</h2>
+      </div>
+
+      <table class="complexity-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Complexity</th>
+            <th>Local Only</th>
+            <th>Accessibility</th>
+            <th>Differentiator</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Voice Selection</strong></td>
+            <td><span class="tag medium">Medium</span></td>
+            <td><span class="check">✓</span> iOS Speech (on-device)</td>
+            <td><span class="check">✓</span> Major benefit</td>
+            <td><span class="check">✓</span> Unique in category</td>
+          </tr>
+          <tr>
+            <td><strong>Quick Presets</strong></td>
+            <td><span class="tag easy">Easy</span></td>
+            <td><span class="check">✓</span> Pure UI</td>
+            <td><span class="check">✓</span> Faster for all</td>
+            <td><span class="check">✓</span> Common ask</td>
+          </tr>
+          <tr>
+            <td><strong>Long-Press Preview</strong></td>
+            <td><span class="tag easy">Easy</span></td>
+            <td><span class="check">✓</span> Uses existing service</td>
+            <td>—</td>
+            <td><span class="check">✓</span> Expected UX</td>
+          </tr>
+          <tr>
+            <td><strong>Drag Reorder</strong></td>
+            <td><span class="tag medium">Medium</span></td>
+            <td><span class="check">✓</span> ReorderableListView</td>
+            <td>—</td>
+            <td><span class="check">✓</span> Power feature</td>
+          </tr>
+          <tr>
+            <td><strong>Siri Shortcuts</strong></td>
+            <td><span class="tag medium">Medium</span></td>
+            <td><span class="check">✓</span> SiriKit on-device</td>
+            <td><span class="check">✓</span> Hands-free</td>
+            <td><span class="check">✓</span> iOS integration</td>
+          </tr>
+          <tr style="background: #fff3f3;">
+            <td><strong>iCloud Sync History</strong></td>
+            <td><span class="tag medium">Medium</span></td>
+            <td><span class="cross">✗</span> Needs CloudKit</td>
+            <td>—</td>
+            <td>—</td>
+          </tr>
+          <tr style="background: #fff3f3;">
+            <td><strong>Smart Page Detection</strong></td>
+            <td><span class="tag medium">Medium</span></td>
+            <td><span class="cross">✗</span> Needs Vision/ML</td>
+            <td>—</td>
+            <td><span class="check">✓</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="summary-box">
+        <h3>Recommended Features to Add (No Backend Required)</h3>
+        <ul>
+          <li>Voice Page Selection</li>
+          <li>Quick Selection Presets</li>
+          <li>Long-Press Page Preview</li>
+          <li>Drag to Reorder Selected Pages</li>
+          <li>Siri Shortcuts Integration</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

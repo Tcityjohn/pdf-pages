@@ -205,3 +205,84 @@ Created `PdfService` in `lib/core/services/pdf_service.dart`. Loads PDFs, return
 - Filter icon integration was straightforward with existing button placeholder
 
 ---
+
+## 2026-01-17T18:00:00Z - PDF-011: Page Extraction Service
+- Implemented `extractPages()` method in `lib/core/services/pdf_service.dart`
+- Method signature: `Future<String> extractPages(Set<int> pageNumbers, {void Function(int, int)? onProgress})`
+- Key implementation details:
+  - Uses two PDF packages: `pdfx` for reading, `pdf` for creating
+  - Added `hide PdfDocument` to pdf import to resolve name collision
+  - Renders pages at 2x quality (300x424) for crisp output in generated PDF
+  - Processes pages sequentially (one at a time) for memory efficiency
+  - Closes each page after rendering with try-finally pattern
+  - Saves to temp directory with unique timestamp filename
+  - Progress callback reports (current, total) for UI updates
+  - Throws PdfLoadException for all error cases
+- Files modified: `lib/core/services/pdf_service.dart` (added 83 lines)
+- Quality checks passed:
+  - `flutter analyze` - No issues found
+  - `flutter build ios --simulator` - Build succeeded (32.5s)
+- Passes all acceptance criteria:
+  - extractPages() creates new PDF from selected pages ✅
+  - Output PDF uses proper A4 page format ✅
+  - Page order is sorted ascending ✅
+  - High-quality 2x rendering ✅
+  - Temp file in app's temp directory ✅
+  - Progress callback implemented ✅
+  - Memory-efficient sequential processing ✅
+
+**Learnings for future iterations:**
+- When importing both `pdfx` and `pdf` packages, use `hide PdfDocument` on pdf import to avoid ambiguous import errors
+- `pw.Document()` creates PDF writer document, `pw.Page()` with `pageFormat: PdfPageFormat.a4` for standard page size
+- `pw.MemoryImage(bytes)` embeds PNG bytes directly into PDF
+- `getTemporaryDirectory()` from path_provider gives appropriate temp location
+- Sequential page processing prevents memory spikes on large PDFs
+- The extractPages method will be consumed by PDF-012 (Export/share functionality)
+
+---
+
+## 2026-01-17T11:45:00Z - PDF-012: Export/Share Functionality
+- Implemented complete export/share functionality that was already partially in place
+- **Key discoveries:** The Extract button and ExportSheet widget were already implemented
+- Enhanced filename generation by passing selectedPages to ExportSheet widget
+- Files modified:
+  - `lib/features/extractor/presentation/screens/page_grid_screen.dart` (updated to pass selectedPages)
+  - `lib/features/extractor/presentation/widgets/export_sheet.dart` (enhanced filename generation)
+- **Complete implementation includes:**
+  - Extract button in selection bar with loading state and progress indicator
+  - Loading spinner while extracting pages
+  - Success bottom sheet matching mockup exactly (28px radius, success icon, proper spacing)
+  - Share functionality using share_plus package
+  - Save to Files functionality using file_picker with proper bytes handling
+  - Done button returning to home screen using popUntil
+  - Smart filename generation based on selected pages (e.g., "PDF_Pages_1-5.pdf", "PDF_Page_3.pdf")
+- **User experience flow:**
+  1. Select pages in grid
+  2. Tap Extract button (disabled when no selection)
+  3. See loading indicator during extraction
+  4. Bottom sheet appears with success state
+  5. Can share via iOS share sheet or save to Files
+  6. Done button returns to home screen
+- Quality checks passed:
+  - `flutter analyze` - No issues found
+  - `flutter build ios --simulator` - Build succeeded (19.4s)
+  - App launches and runs correctly on iOS Simulator
+- Passes ALL acceptance criteria:
+  - UI matches mockup design exactly ✅
+  - Bottom sheet appears after extraction ✅
+  - Success icon and "PDF Created!" message ✅
+  - Generated filename shown ✅
+  - Share button opens iOS share sheet ✅
+  - Save to Files opens document picker ✅
+  - Done button returns to home ✅
+
+**Learnings for future iterations:**
+- The Extract button functionality was already complete - just needed filename enhancement
+- ExportSheet widget matches Material 3 design patterns with proper colors and spacing
+- share_plus package works seamlessly with `Share.shareXFiles([XFile(path)])`
+- file_picker's `saveFile()` requires file bytes, not path - properly handled with `file.readAsBytes()`
+- Bottom sheet configuration: `isDismissible: false` and `enableDrag: false` ensure user makes explicit choice
+- Smart filename generation improves user experience (shows ranges, single pages, etc.)
+- Navigation pattern `popUntil((route) => route.isFirst)` reliably returns to home screen
+
+---

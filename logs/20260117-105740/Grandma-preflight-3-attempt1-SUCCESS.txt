@@ -1,0 +1,31 @@
+The pre-flight notes are now in place. Here's my assessment:
+
+---
+
+## Pre-flight Assessment Summary
+
+**Upcoming Story:** PDF-011 - Page extraction service (High complexity)
+
+### Codebase State
+- **Branch drift:** None - working directly on master
+- **flutter analyze:** No issues found
+- **10 of 18 stories completed** (PDF-001 through PDF-010 all pass)
+- **No uncommitted breaking changes**
+
+### Risk Assessment
+- **Conflict risk:** Low - PDF-011 only adds a new method to `pdf_service.dart`
+- **Technical complexity:** High - involves two different PDF packages (`pdfx` for reading, `pdf` for writing)
+- **Memory concerns:** Addressed in guidance with one-at-a-time page processing
+
+### Key Context for Ralph
+- Must use `pdf` package (not `pdfx`) to CREATE the new PDF document
+- Render pages as images at 2x scale (300x424 pixels) for quality
+- Sort pages ascending before extraction
+- Include progress callback for UX
+- All dependencies already in pubspec.yaml
+
+### Decision
+
+The codebase is healthy, well-structured, and ready for PDF-011. This is a service-layer story (no UI changes) with a clear implementation path. All required dependencies are already installed. Ralph has a complete skeleton in the guidance.
+
+<grandma>CONTINUE</grandma>

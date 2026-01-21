@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=414, initial-scale=1.0">
+  <title>PDF Pages - Soft Minimal UI Preview</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      padding: 40px;
+      flex-wrap: wrap;
+    }
+
+    .phone-frame {
+      width: 390px;
+      height: 844px;
+      background: #fff;
+      border-radius: 50px;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.15);
+      overflow: hidden;
+      position: relative;
+      border: 12px solid #1a1a1a;
+    }
+
+    .notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 150px;
+      height: 34px;
+      background: #1a1a1a;
+      border-radius: 0 0 20px 20px;
+      z-index: 100;
+    }
+
+    .screen {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .label {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 14px;
+      color: #666;
+      font-weight: 500;
+    }
+
+    /* HOME SCREEN */
+    .home-screen {
+      background: linear-gradient(to bottom,
+        #E63946 0%,
+        #EF6B6B 30%,
+        #F9C4C8 60%,
+        #ffffff 100%
+      );
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 60px 32px 40px;
+    }
+
+    .home-header {
+      display: flex;
+      justify-content: flex-end;
+      padding-top: 10px;
+    }
+
+    .settings-icon {
+      width: 24px;
+      height: 24px;
+      color: white;
+      opacity: 0.9;
+    }
+
+    .home-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .small-label {
+      font-size: 15px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 8px;
+    }
+
+    .big-title {
+      font-size: 42px;
+      font-weight: 600;
+      letter-spacing: -1px;
+      color: white;
+      margin-bottom: 12px;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: rgba(255,255,255,0.8);
+      line-height: 1.4;
+      margin-bottom: 32px;
+    }
+
+    .privacy-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.2);
+      padding: 8px 16px;
+      border-radius: 24px;
+      margin-bottom: 24px;
+    }
+
+    .privacy-badge svg {
+      width: 16px;
+      height: 16px;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .privacy-badge span {
+      font-size: 13px;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .usage-banner {
+      width: 100%;
+      background: rgba(255,255,255,0.15);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .usage-dots {
+      display: flex;
+      gap: 6px;
+      margin-right: 12px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: white;
+    }
+
+    .dot.used {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .usage-text {
+      flex: 1;
+      font-size: 14px;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .chevron {
+      width: 18px;
+      height: 18px;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .black-pill-btn {
+      width: 100%;
+      background: #1a1a1a;
+      color: white;
+      border: none;
+      padding: 18px 32px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    /* PAGE GRID SCREEN */
+    .grid-screen {
+      background: white;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .grid-header {
+      padding: 54px 16px 12px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .close-btn {
+      width: 24px;
+      height: 24px;
+      color: #1a1a1a;
+    }
+
+    .doc-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    .toolbar {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      padding: 5px 10px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .badge.pages {
+      background: #F9C4C8;
+      color: #E63946;
+    }
+
+    .badge.selected {
+      background: #E3F2FD;
+      color: #1565C0;
+    }
+
+    .toolbar-spacer {
+      flex: 1;
+    }
+
+    .toolbar-icon {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+    }
+
+    .extract-btn {
+      background: #1a1a1a;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .page-grid {
+      flex: 1;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      overflow-y: auto;
+      align-content: start;
+    }
+
+    .page-thumb {
+      aspect-ratio: 0.7;
+      background: #f5f5f5;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .page-thumb.selected {
+      border: 3px solid #E63946;
+      box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3);
+    }
+
+    .page-thumb .page-content {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+      display: flex;
+      flex-direction: column;
+      padding: 8px;
+    }
+
+    .page-thumb .line {
+      height: 4px;
+      background: #ddd;
+      border-radius: 2px;
+      margin-bottom: 4px;
+    }
+
+    .page-thumb .line.short { width: 60%; }
+    .page-thumb .line.medium { width: 80%; }
+    .page-thumb .line.long { width: 100%; }
+
+    .page-number {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .check-badge {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      width: 24px;
+      height: 24px;
+      background: #E63946;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .check-badge svg {
+      width: 14px;
+      height: 14px;
+      color: white;
+    }
+
+    /* EXPORT SHEET */
+    .export-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-radius: 28px 28px 0 0;
+      padding: 24px;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+    }
+
+    .sheet-handle {
+      width: 36px;
+      height: 4px;
+      background: rgba(0,0,0,0.1);
+      border-radius: 2px;
+      margin: 0 auto 24px;
+    }
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      background: #E8F5E9;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .success-icon svg {
+      width: 48px;
+      height: 48px;
+      color: #4CAF50;
+    }
+
+    .export-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1a1a1a;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .export-filename {
+      font-size: 14px;
+      color: rgba(0,0,0,0.6);
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .outlined-btn {
+      width: 100%;
+      background: transparent;
+      color: #1a1a1a;
+      border: 1px solid rgba(0,0,0,0.2);
+      padding: 16px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .text-btn {
+      width: 100%;
+      background: transparent;
+      color: rgba(0,0,0,0.6);
+      border: none;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+
+    .screen-label {
+      position: absolute;
+      top: -30px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .phone-container {
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HOME SCREEN -->
+  <div class="phone-container">
+    <div class="screen-label">Home Screen</div>
+    <div class="phone-frame">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="home-screen">
+          <div class="home-header">
+            <svg class="settings-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+          </div>
+
+          <div class="home-content">
+            <div class="small-label">Select a PDF</div>
+            <div class="big-title">Extract Pages</div>
+            <div class="subtitle">Select specific pages from any PDF<br>and save them as a new document</div>
+
+            <div class="privacy-badge">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+              </svg>
+              <span>Your documents never leave your device</span>
+            </div>
+
+            <div class="usage-banner">
+              <div class="usage-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot used"></div>
+              </div>
+              <div class="usage-text">2 free extractions left</div>
+              <svg class="chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </div>
+
+            <button class="black-pill-btn">Select PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE GRID SCREEN -->
+  <div class="phone-container">
+    <div class="screen-label">Page Grid</div>
+    <div class="phone-frame">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="grid-screen">
+          <div class="grid-header">
+            <svg class="close-btn" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+            <div class="doc-title">Annual_Report_2025</div>
+          </div>
+
+          <div class="toolbar">
+            <div class="badge pages">12 pages</div>
+            <div class="badge selected">3 selected</div>
+            <div class="toolbar-spacer"></div>
+            <div class="toolbar-icon">
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+              </svg>
+            </div>
+            <div class="toolbar-icon">
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+            </div>
+            <button class="extract-btn">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              Extract
+            </button>
+          </div>
+
+          <div class="page-grid">
+            <div class="page-thumb selected">
+              <div class="page-content">
+                <div class="line long"></div>
+                <div class="line medium"></div>
+                <div class="line short"></div>
+              </div>
+              <div class="page-number">1</div>
+              <div class="check-badge">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="page-thumb">
+              <div class="page-content">
+                <div class="line medium"></div>
+                <div class="line long"></div>
+                <div class="line short"></div>
+              </div>
+              <div class="page-number">2</div>
+            </div>
+            <div class="page-thumb selected">
+              <div class="page-content">
+                <div class="line short"></div>
+                <div class="line long"></div>
+                <div class="line medium"></div>
+              </div>
+              <div class="page-number">3</div>
+              <div class="check-badge">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="page-thumb">
+              <div class="page-content">
+                <div class="line long"></div>
+                <div class="line short"></div>
+                <div class="line medium"></div>
+              </div>
+              <div class="page-number">4</div>
+            </div>
+            <div class="page-thumb selected">
+              <div class="page-content">
+                <div class="line medium"></div>
+                <div class="line medium"></div>
+                <div class="line long"></div>
+              </div>
+              <div class="page-number">5</div>
+              <div class="check-badge">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="page-thumb">
+              <div class="page-content">
+                <div class="line short"></div>
+                <div class="line long"></div>
+                <div class="line short"></div>
+              </div>
+              <div class="page-number">6</div>
+            </div>
+            <div class="page-thumb">
+              <div class="page-content">
+                <div class="line long"></div>
+                <div class="line medium"></div>
+                <div class="line long"></div>
+              </div>
+              <div class="page-number">7</div>
+            </div>
+            <div class="page-thumb">
+              <div class="page-content">
+                <div class="line medium"></div>
+                <div class="line short"></div>
+                <div class="line long"></div>
+              </div>
+              <div class="page-number">8</div>
+            </div>
+            <div class="page-thumb">
+              <div class="page-content">
+                <div class="line short"></div>
+                <div class="line medium"></div>
+                <div class="line short"></div>
+              </div>
+              <div class="page-number">9</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORT SHEET -->
+  <div class="phone-container">
+    <div class="screen-label">Export Sheet</div>
+    <div class="phone-frame">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="grid-screen" style="filter: brightness(0.7);">
+          <div class="grid-header">
+            <svg class="close-btn" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+            <div class="doc-title">Annual_Report_2025</div>
+          </div>
+        </div>
+
+        <div class="export-overlay">
+          <div class="sheet-handle"></div>
+
+          <div class="success-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+
+          <div class="export-title">PDF Created!</div>
+          <div class="export-filename">PDF_Pages_1_3_5.pdf</div>
+
+          <button class="black-pill-btn">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
+            </svg>
+            Share
+          </button>
+
+          <button class="outlined-btn">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+            </svg>
+            Save to Files
+          </button>
+
+          <button class="text-btn">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
