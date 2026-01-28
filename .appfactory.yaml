@@ -1,0 +1,10 @@
+app_id: pdf-pages
+app_name: pdf-pages
+track:
+  - progress.txt
+  - prd.json
+  - guidance.txt
+pipeline_stage: ship
+priority: medium
+github_url: https://github.com/Tcityjohn/pdf-pages.git
+onboarded_at: '2026-01-28T18:39:38.300Z'

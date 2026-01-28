@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "app": {
+    "name": "pdf-pages",
+    "platform": "flutter"
+  },
+  "pipeline": {
+    "current_stage": "ship",
+    "status": "active",
+    "entered_stage_at": "2026-01-28T18:45:52.025Z",
+    "appfactory_id": "pdf-pages"
+  },
+  "artifacts": {
+    "prd": {
+      "exists": true,
+      "path": "prd.json",
+      "generated": false
+    },
+    "design": {
+      "exists": false
+    },
+    "build_plan": {
+      "exists": false
+    },
+    "guidance": {
+      "exists": true,
+      "path": "guidance.txt"
+    },
+    "progress": {
+      "exists": true,
+      "path": "progress.txt"
+    }
+  },
+  "existing_docs": [
+    "prd.json",
+    "progress.txt",
+    "guidance.txt",
+    "grandma-preflight.md",
+    "grandma-review.md",
+    "README.md",
+    "session-init.md"
+  ],
+  "ship_info": {
+    "shipped": false
+  },
+  "generated": true,
+  "created_at": "2026-01-28T18:39:38.302Z",
+  "updated_at": "2026-01-28T18:45:52.025Z"
+}
