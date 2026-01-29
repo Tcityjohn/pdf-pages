@@ -63,10 +63,12 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
   String _transcription = '';
   VoiceCommandResult? _parsedCommand;
   SpeechState _state = SpeechState.idle;
+  SpeechState _previousState = SpeechState.idle;
   bool _permissionGranted = false;
   bool _isAvailable = false;
   String? _feedbackMessage;
   bool _feedbackSuccess = true;
+  bool _isExecuting = false;
 
   late VoiceCommandHandler _commandHandler;
 
@@ -134,12 +136,25 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
     });
 
     _stateSub = widget.speechService.stateStream.listen((state) {
-      setState(() => _state = state);
+      final wasListening = _previousState == SpeechState.listening;
+      setState(() {
+        _previousState = _state;
+        _state = state;
+      });
+
       if (state == SpeechState.listening) {
         _pulseController.repeat(reverse: true);
       } else {
         _pulseController.stop();
         _pulseController.reset();
+
+        // Auto-execute when speech naturally ends (listening → idle) with valid command
+        if (wasListening && state == SpeechState.idle && !_isExecuting) {
+          final command = _parsedCommand;
+          if (command != null && command.type != VoiceCommandType.unrecognized) {
+            _executeCommand();
+          }
+        }
       }
     });
   }
@@ -154,6 +169,8 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
   }
 
   Future<void> _executeCommand() async {
+    if (_isExecuting) return;
+
     final command = _parsedCommand;
     if (command == null || command.type == VoiceCommandType.unrecognized) {
       setState(() {
@@ -163,6 +180,7 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
       return;
     }
 
+    setState(() => _isExecuting = true);
     _initCommandHandler();
 
     HapticFeedback.mediumImpact();
@@ -171,6 +189,7 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
     setState(() {
       _feedbackMessage = result.feedback;
       _feedbackSuccess = result.success;
+      _isExecuting = false;
     });
 
     if (result.shouldDismiss) {
