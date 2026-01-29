@@ -370,4 +370,66 @@ void main() {
       expect(result.pages, {5});
     });
   });
+
+  group('Homophone handling (speech-to-text quirks)', () {
+    test('parses "page to" as page 2 (homophone)', () {
+      final result = speechService.parseVoiceCommand(
+        'page to',
+        10,
+        context: VoiceContext.pageGrid,
+      );
+      expect(result.type, VoiceCommandType.selectPages);
+      expect(result.pages, {2});
+    });
+
+    test('parses "page too" as page 2 (homophone)', () {
+      final result = speechService.parseVoiceCommand(
+        'page too',
+        10,
+        context: VoiceContext.pageGrid,
+      );
+      expect(result.type, VoiceCommandType.selectPages);
+      expect(result.pages, {2});
+    });
+
+    test('parses "page for" as page 4 (homophone)', () {
+      final result = speechService.parseVoiceCommand(
+        'page for',
+        10,
+        context: VoiceContext.pageGrid,
+      );
+      expect(result.type, VoiceCommandType.selectPages);
+      expect(result.pages, {4});
+    });
+
+    test('parses "page ate" as page 8 (homophone)', () {
+      final result = speechService.parseVoiceCommand(
+        'page ate',
+        10,
+        context: VoiceContext.pageGrid,
+      );
+      expect(result.type, VoiceCommandType.selectPages);
+      expect(result.pages, {8});
+    });
+
+    test('parses "select page to" as page 2', () {
+      final result = speechService.parseVoiceCommand(
+        'select page to',
+        10,
+        context: VoiceContext.pageGrid,
+      );
+      expect(result.type, VoiceCommandType.selectPages);
+      expect(result.pages, {2});
+    });
+
+    test('parses "add page for" as addPages with page 4', () {
+      final result = speechService.parseVoiceCommand(
+        'add page for',
+        10,
+        context: VoiceContext.pageGrid,
+      );
+      expect(result.type, VoiceCommandType.addPages);
+      expect(result.pages, {4});
+    });
+  });
 }

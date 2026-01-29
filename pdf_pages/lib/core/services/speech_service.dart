@@ -411,13 +411,15 @@ class SpeechService {
   }
 
   /// Convert number word to integer
+  /// Handles both number words and common speech-to-text homophones
   int? _parseNumber(String text) {
     // Try direct parsing first
     final direct = int.tryParse(text);
     if (direct != null) return direct;
 
-    // Number words mapping
+    // Number words mapping (includes homophones that speech recognition often produces)
     const numberWords = {
+      // Standard number words
       'one': 1,
       'first': 1,
       'two': 2,
@@ -450,6 +452,14 @@ class SpeechService {
       'eighteen': 18,
       'nineteen': 19,
       'twenty': 20,
+      // Common speech-to-text homophones
+      'won': 1,
+      'to': 2,
+      'too': 2,
+      'tu': 2,
+      'for': 4,
+      'fore': 4,
+      'ate': 8,
     };
 
     return numberWords[text.toLowerCase()];
