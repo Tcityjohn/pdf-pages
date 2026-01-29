@@ -69,6 +69,10 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
   bool _feedbackSuccess = true;
   bool _isExecuting = false;
 
+  // Silence timeout - stops listening after no speech for 1.5 seconds
+  Timer? _silenceTimer;
+  static const _silenceTimeout = Duration(milliseconds: 1500);
+
   late VoiceCommandHandler _commandHandler;
 
   @override
@@ -132,6 +136,9 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
         );
         _feedbackMessage = null; // Clear feedback when new transcription comes
       });
+
+      // Reset silence timer - when user stops speaking, we'll auto-stop after timeout
+      _resetSilenceTimer();
     });
 
     _stateSub = widget.speechService.stateStream.listen((state) {
@@ -170,7 +177,40 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
   }
 
   Future<void> _stopListening() async {
+    _cancelSilenceTimer();
     await widget.speechService.stopListening();
+  }
+
+  /// Reset the silence timer - called each time we get transcription
+  void _resetSilenceTimer() {
+    _cancelSilenceTimer();
+
+    // Only set timer if we're listening and have some transcription
+    if (_state == SpeechState.listening && _transcription.isNotEmpty) {
+      _silenceTimer = Timer(_silenceTimeout, () {
+        // Silence detected - stop listening which triggers auto-execute
+        if (mounted && _state == SpeechState.listening && !_isExecuting) {
+          _stopListeningAndExecute();
+        }
+      });
+    }
+  }
+
+  void _cancelSilenceTimer() {
+    _silenceTimer?.cancel();
+    _silenceTimer = null;
+  }
+
+  /// Stop listening and execute the command
+  Future<void> _stopListeningAndExecute() async {
+    _cancelSilenceTimer();
+    await widget.speechService.stopListening();
+
+    // Execute the command if valid
+    final command = _parsedCommand;
+    if (command != null && command.type != VoiceCommandType.unrecognized) {
+      _executeCommand();
+    }
   }
 
   Future<void> _executeCommand() async {
@@ -206,6 +246,7 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
 
   @override
   void dispose() {
+    _cancelSilenceTimer();
     _transcriptionSub?.cancel();
     _stateSub?.cancel();
     _pulseController.dispose();
