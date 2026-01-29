@@ -110,12 +110,14 @@ class PdfService {
   /// Extracts selected pages into a new PDF document
   /// [pageNumbers] - Set of 1-indexed page numbers to extract
   /// [customOrder] - Optional list specifying the order of pages (if null, ascending order is used)
+  /// [customFileName] - Optional custom filename for the output (without .pdf extension)
   /// [onProgress] - Optional callback for progress updates (current, total)
   /// Returns the file path of the created PDF in the temp directory
   /// Throws [PdfLoadException] if extraction fails
   Future<String> extractPages(
     Set<int> pageNumbers, {
     List<int>? customOrder,
+    String? customFileName,
     void Function(int current, int total)? onProgress,
   }) async {
     if (_currentDocument == null) {
@@ -178,10 +180,13 @@ class PdfService {
         }
       }
 
-      // Save to temp directory with unique filename
+      // Save to temp directory with custom or timestamp-based filename
       final tempDir = await getTemporaryDirectory();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final outputPath = '${tempDir.path}/extracted_$timestamp.pdf';
+      final fileName = customFileName != null
+          ? '${customFileName.replaceAll(RegExp(r'[^\w\s-]'), '')}.pdf'
+          : 'extracted_$timestamp.pdf';
+      final outputPath = '${tempDir.path}/$fileName';
 
       final file = File(outputPath);
       await file.writeAsBytes(await pdf.save());

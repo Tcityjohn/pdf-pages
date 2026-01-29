@@ -1,42 +1,74 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/speech_service.dart';
+import '../../../../core/services/voice_command_handler.dart';
+import '../../../../core/services/recents_service.dart';
 import '../../../../core/widgets/shared_ui.dart';
 
-/// Compact floating bar for voice-based page selection
-/// Doesn't block view of the PDF grid
-class VoiceInputBar extends StatefulWidget {
+/// Compact floating bar for voice-based commands
+/// Works on both Home and PageGrid screens
+class VoiceInputBar extends ConsumerStatefulWidget {
   final SpeechService speechService;
   final int pageCount;
-  final void Function(Set<int> pages) onPagesSelected;
+  final VoiceContext context;
+  final RecentsService? recentsService;
+
+  // Callbacks for home screen
+  final VoidCallback? onOpenFilePicker;
+  final Future<void> Function(String path)? onOpenRecentFile;
+
+  // Callbacks for page grid screen
+  final void Function(Set<int> pages)? onPagesSelected;
+  final VoidCallback? onCloseDocument;
+  final Future<void> Function({String? customName})? onExtract;
+  final void Function(int pageNumber)? onScrollToPage;
+
+  // Common callbacks
+  final VoidCallback? onOpenSettings;
+  final VoidCallback? onShowHelp;
+  final VoidCallback? onShowPaywall;
   final VoidCallback onDismiss;
 
   const VoiceInputBar({
     super.key,
     required this.speechService,
     required this.pageCount,
-    required this.onPagesSelected,
+    required this.context,
     required this.onDismiss,
+    this.recentsService,
+    this.onOpenFilePicker,
+    this.onOpenRecentFile,
+    this.onPagesSelected,
+    this.onCloseDocument,
+    this.onExtract,
+    this.onScrollToPage,
+    this.onOpenSettings,
+    this.onShowHelp,
+    this.onShowPaywall,
   });
 
   @override
-  State<VoiceInputBar> createState() => _VoiceInputBarState();
+  ConsumerState<VoiceInputBar> createState() => _VoiceInputBarState();
 }
 
-class _VoiceInputBarState extends State<VoiceInputBar>
+class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
 
   StreamSubscription<String>? _transcriptionSub;
   StreamSubscription<SpeechState>? _stateSub;
 
   String _transcription = '';
-  Set<int>? _parsedPages;
+  VoiceCommandResult? _parsedCommand;
   SpeechState _state = SpeechState.idle;
   bool _permissionGranted = false;
   bool _isAvailable = false;
+  String? _feedbackMessage;
+  bool _feedbackSuccess = true;
+
+  late VoiceCommandHandler _commandHandler;
 
   @override
   void initState() {
@@ -47,11 +79,29 @@ class _VoiceInputBarState extends State<VoiceInputBar>
       duration: const Duration(milliseconds: 1000),
     );
 
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
     _checkAvailabilityAndPermission();
+  }
+
+  void _initCommandHandler() {
+    _commandHandler = VoiceCommandHandler(
+      ref: ref,
+      pageCount: widget.pageCount,
+      context: widget.context,
+      recentsService: widget.recentsService,
+      onOpenFilePicker: widget.onOpenFilePicker != null
+          ? () async {
+              widget.onOpenFilePicker!();
+            }
+          : null,
+      onOpenRecentFile: widget.onOpenRecentFile,
+      onCloseDocument: widget.onCloseDocument,
+      onOpenSettings: widget.onOpenSettings,
+      onShowHelp: widget.onShowHelp,
+      onShowPaywall: widget.onShowPaywall,
+      onExtract: widget.onExtract,
+      onScrollToPage: widget.onScrollToPage,
+      onCancel: widget.onDismiss,
+    );
   }
 
   Future<void> _checkAvailabilityAndPermission() async {
@@ -70,10 +120,16 @@ class _VoiceInputBarState extends State<VoiceInputBar>
   }
 
   void _setupListeners() {
-    _transcriptionSub = widget.speechService.transcriptionStream.listen((text) {
+    _transcriptionSub =
+        widget.speechService.transcriptionStream.listen((text) {
       setState(() {
         _transcription = text;
-        _parsedPages = widget.speechService.parseVoiceCommand(text, widget.pageCount);
+        _parsedCommand = widget.speechService.parseVoiceCommand(
+          text,
+          widget.pageCount,
+          context: widget.context,
+        );
+        _feedbackMessage = null; // Clear feedback when new transcription comes
       });
     });
 
@@ -97,11 +153,29 @@ class _VoiceInputBarState extends State<VoiceInputBar>
     await widget.speechService.stopListening();
   }
 
-  void _confirmSelection() {
-    final pages = _parsedPages;
-    if (pages != null && pages.isNotEmpty) {
-      HapticFeedback.mediumImpact();
-      widget.onPagesSelected(pages);
+  Future<void> _executeCommand() async {
+    final command = _parsedCommand;
+    if (command == null || command.type == VoiceCommandType.unrecognized) {
+      setState(() {
+        _feedbackMessage = 'Command not recognized';
+        _feedbackSuccess = false;
+      });
+      return;
+    }
+
+    _initCommandHandler();
+
+    HapticFeedback.mediumImpact();
+    final result = await _commandHandler.handle(command);
+
+    setState(() {
+      _feedbackMessage = result.feedback;
+      _feedbackSuccess = result.success;
+    });
+
+    if (result.shouldDismiss) {
+      // Small delay to show feedback before dismissing
+      await Future.delayed(const Duration(milliseconds: 500));
       widget.onDismiss();
     }
   }
@@ -113,6 +187,57 @@ class _VoiceInputBarState extends State<VoiceInputBar>
     _pulseController.dispose();
     widget.speechService.stopListening();
     super.dispose();
+  }
+
+  String _getHintText() {
+    if (widget.context == VoiceContext.home) {
+      return 'Say "find document" or "open [name]"';
+    } else {
+      return 'Say "pages 1 to 5" or "all pages"';
+    }
+  }
+
+  String _getCommandPreview() {
+    final command = _parsedCommand;
+    if (command == null) return '';
+
+    switch (command.type) {
+      case VoiceCommandType.selectPages:
+        final count = command.pages?.length ?? 0;
+        return '$count page${count == 1 ? '' : 's'} recognized';
+      case VoiceCommandType.addPages:
+        final count = command.pages?.length ?? 0;
+        return 'Add $count page${count == 1 ? '' : 's'}';
+      case VoiceCommandType.removePages:
+        final count = command.pages?.length ?? 0;
+        return 'Remove $count page${count == 1 ? '' : 's'}';
+      case VoiceCommandType.openFilePicker:
+        return 'Open file picker';
+      case VoiceCommandType.openRecentByName:
+        return 'Search: "${command.searchQuery}"';
+      case VoiceCommandType.extract:
+        return 'Extract selected pages';
+      case VoiceCommandType.extractWithName:
+        return 'Extract as "${command.customName}"';
+      case VoiceCommandType.clearSelection:
+        return 'Clear selection';
+      case VoiceCommandType.invertSelection:
+        return 'Invert selection';
+      case VoiceCommandType.goToPage:
+        return 'Go to page ${command.targetPage}';
+      case VoiceCommandType.closeDocument:
+        return 'Close document';
+      case VoiceCommandType.openSettings:
+        return 'Open settings';
+      case VoiceCommandType.showHelp:
+        return 'Show help';
+      case VoiceCommandType.showPaywall:
+        return 'Show premium';
+      case VoiceCommandType.cancel:
+        return 'Cancel';
+      case VoiceCommandType.unrecognized:
+        return '';
+    }
   }
 
   @override
@@ -161,6 +286,10 @@ class _VoiceInputBarState extends State<VoiceInputBar>
         ),
       );
     }
+
+    final commandPreview = _getCommandPreview();
+    final hasValidCommand = _parsedCommand != null &&
+        _parsedCommand!.type != VoiceCommandType.unrecognized;
 
     return Container(
       margin: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottomPadding),
@@ -245,37 +374,53 @@ class _VoiceInputBarState extends State<VoiceInputBar>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        _transcription.isEmpty
-                            ? (_state == SpeechState.listening
-                                ? 'Listening...'
-                                : 'Tap mic & say "pages 1 to 5"')
-                            : _transcription,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: _transcription.isEmpty
-                              ? FontWeight.normal
-                              : FontWeight.w500,
-                          color: _transcription.isEmpty
-                              ? AppColors.textSecondary
-                              : AppColors.textPrimary,
-                          fontStyle: _transcription.isEmpty
-                              ? FontStyle.italic
-                              : FontStyle.normal,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (_parsedPages != null && _parsedPages!.isNotEmpty) ...[
-                        const SizedBox(height: 4),
+                      // Feedback message (if any)
+                      if (_feedbackMessage != null) ...[
                         Text(
-                          '${_parsedPages!.length} page${_parsedPages!.length == 1 ? '' : 's'} recognized',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.success,
+                          _feedbackMessage!,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: _feedbackSuccess
+                                ? AppColors.success
+                                : AppColors.primary,
                           ),
                         ),
+                      ] else ...[
+                        Text(
+                          _transcription.isEmpty
+                              ? (_state == SpeechState.listening
+                                  ? 'Listening...'
+                                  : _getHintText())
+                              : _transcription,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: _transcription.isEmpty
+                                ? FontWeight.normal
+                                : FontWeight.w500,
+                            color: _transcription.isEmpty
+                                ? AppColors.textSecondary
+                                : AppColors.textPrimary,
+                            fontStyle: _transcription.isEmpty
+                                ? FontStyle.italic
+                                : FontStyle.normal,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (commandPreview.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            commandPreview,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: hasValidCommand
+                                  ? AppColors.success
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ],
                     ],
                   ),
@@ -295,11 +440,11 @@ class _VoiceInputBarState extends State<VoiceInputBar>
                   ),
                 ),
 
-                // Confirm button (only when pages recognized)
-                if (_parsedPages != null && _parsedPages!.isNotEmpty) ...[
+                // Execute button (only when valid command recognized)
+                if (hasValidCommand) ...[
                   const SizedBox(width: 4),
                   ElevatedButton(
-                    onPressed: _confirmSelection,
+                    onPressed: _executeCommand,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.textPrimary,
                       foregroundColor: Colors.white,
@@ -313,7 +458,7 @@ class _VoiceInputBarState extends State<VoiceInputBar>
                       elevation: 0,
                     ),
                     child: const Text(
-                      'Select',
+                      'Go',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -330,7 +475,7 @@ class _VoiceInputBarState extends State<VoiceInputBar>
   }
 }
 
-/// Legacy bottom sheet - kept for reference but replaced by VoiceInputBar
+/// Legacy compatibility - kept for reference
 class VoiceInputSheet extends StatefulWidget {
   final SpeechService speechService;
   final int pageCount;
@@ -350,7 +495,6 @@ class VoiceInputSheet extends StatefulWidget {
 class _VoiceInputSheetState extends State<VoiceInputSheet> {
   @override
   Widget build(BuildContext context) {
-    // Redirect to use the new bar instead
     return Container();
   }
 }

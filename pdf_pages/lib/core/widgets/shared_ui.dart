@@ -185,3 +185,58 @@ class AppButtonCompact extends StatelessWidget {
     );
   }
 }
+
+/// 64x64 Voice FAB button for primary voice input
+/// Used on both Home and PageGrid screens as THE primary interface
+class VoiceActionButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  final bool isListening;
+  final bool isProcessing;
+
+  const VoiceActionButton({
+    super.key,
+    required this.onPressed,
+    this.isListening = false,
+    this.isProcessing = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          color: isListening ? AppColors.primary : AppColors.textPrimary,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: (isListening ? AppColors.primary : AppColors.textPrimary)
+                  .withValues(alpha: 0.4),
+              blurRadius: isListening ? 20 : 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Center(
+          child: isProcessing
+              ? const SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation(Colors.white),
+                  ),
+                )
+              : Icon(
+                  isListening ? Icons.stop : Icons.mic,
+                  color: Colors.white,
+                  size: 28,
+                ),
+        ),
+      ),
+    );
+  }
+}

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/pdf_service.dart';
 import '../../../../core/services/usage_service.dart';
+import '../../../../core/services/recents_service.dart';
 import '../../../../core/widgets/shared_ui.dart';
 import '../../../providers/selection_provider.dart';
 import '../../../providers/page_order_provider.dart';
@@ -13,6 +14,7 @@ import '../widgets/preset_chips.dart';
 import '../widgets/page_preview_dialog.dart';
 import '../widgets/voice_input_sheet.dart';
 import '../widgets/paywall_sheet.dart';
+import '../widgets/voice_help_sheet.dart';
 import '../../../../core/services/speech_service.dart';
 import '../../../../core/services/siri_service.dart';
 import '../../../../core/services/analytics_service.dart';
@@ -22,6 +24,7 @@ import '../../../../core/services/analytics_service.dart';
 class PageGridScreen extends ConsumerStatefulWidget {
   final PdfService pdfService;
   final UsageService usageService;
+  final RecentsService? recentsService;
   final String documentName;
   final int pageCount;
 
@@ -29,6 +32,7 @@ class PageGridScreen extends ConsumerStatefulWidget {
     super.key,
     required this.pdfService,
     required this.usageService,
+    this.recentsService,
     required this.documentName,
     required this.pageCount,
   });
@@ -56,11 +60,18 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
   // Siri service for shortcuts
   late final SiriService _siriService;
 
+  // ScrollController for go-to-page navigation
+  late final ScrollController _scrollController;
+
+  // Custom filename for extraction (from voice command)
+  String? _customFileName;
+
   @override
   void initState() {
     super.initState();
     _speechService = SpeechService();
     _siriService = SiriService();
+    _scrollController = ScrollController();
     // Start loading thumbnails progressively
     _loadThumbnailsProgressively();
   }
@@ -69,6 +80,7 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
   void dispose() {
     _speechService.dispose();
     _siriService.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -143,7 +155,7 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
   }
 
   /// Extract selected pages to new PDF
-  Future<void> _extractPages() async {
+  Future<void> _extractPages({String? customName}) async {
     final selectedPages = ref.read(selectedPagesProvider);
     if (selectedPages.isEmpty) return;
 
@@ -173,6 +185,7 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
       final extractedPath = await widget.pdfService.extractPages(
         selectedPages,
         customOrder: customOrder,
+        customFileName: customName ?? _customFileName,
         onProgress: (current, total) {
           // Progress callback - could show progress dialog in future
           debugPrint('Extracting page $current of $total');
@@ -199,7 +212,10 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
       }
 
       if (mounted) {
-        setState(() => _isExtracting = false);
+        setState(() {
+          _isExtracting = false;
+          _customFileName = null; // Reset custom filename
+        });
         await _showExportSheet(extractedPath);
       }
     } catch (e) {
@@ -301,6 +317,31 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
     });
   }
 
+  /// Scroll to a specific page in the grid
+  void _scrollToPage(int pageNumber) {
+    // Calculate row index (0-indexed)
+    final rowIndex = (pageNumber - 1) ~/ 3;
+    // Estimate row height including spacing
+    const rowHeight = 180.0; // Approximate height based on aspect ratio
+    final offset = rowIndex * rowHeight;
+
+    _scrollController.animateTo(
+      offset.clamp(0.0, _scrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  /// Show the help sheet
+  void _showHelpSheet() {
+    VoiceHelpSheet.show(context, VoiceContext.pageGrid);
+  }
+
+  /// Show the paywall/premium sheet
+  void _showPaywall() {
+    _showUsageLimitDialog();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -355,7 +396,7 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
                         ? 'Extracting...'
                         : 'Extract ${selectedPages.length} Page${selectedPages.length == 1 ? '' : 's'}',
                     icon: _isExtracting ? null : Icons.file_download,
-                    onPressed: !_isExtracting ? _extractPages : null,
+                    onPressed: !_isExtracting ? () => _extractPages() : null,
                     isLoading: _isExtracting,
                   ),
                 ),
@@ -390,161 +431,149 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
           ),
         ),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // Selection bar - simplified styling
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.9),
-              border: Border(
-                bottom: BorderSide(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  width: 1,
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                // Page count badge
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryPale,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    '${widget.pageCount} pages',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.primary,
+          Column(
+            children: [
+              // Selection bar - simplified styling (removed mic button)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      width: 1,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                child: Row(
+                  children: [
+                    // Page count badge
+                    Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryPale,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        '${widget.pageCount} pages',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
 
-                // Selected count badge
-                Consumer(
-                  builder: (context, ref, child) {
-                    final selectedPages = ref.watch(selectedPagesProvider);
-                    return selectedPages.isNotEmpty
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE3F2FD),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Text(
-                            '${selectedPages.length} selected',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF1565C0),
-                            ),
-                          ),
-                        )
-                      : const SizedBox.shrink();
-                  },
-                ),
+                    // Selected count badge
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final selectedPages = ref.watch(selectedPagesProvider);
+                        return selectedPages.isNotEmpty
+                          ? Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE3F2FD),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                '${selectedPages.length} selected',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF1565C0),
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink();
+                      },
+                    ),
 
-                const Spacer(),
+                    const Spacer(),
 
-                // Voice input button
-                IconButton(
-                  onPressed: _toggleVoiceInput,
-                  icon: const Icon(Icons.mic),
-                  iconSize: 20,
-                  padding: const EdgeInsets.all(8),
-                  constraints: const BoxConstraints(
-                    minWidth: 36,
-                    minHeight: 36,
-                  ),
-                  tooltip: 'Voice selection',
-                ),
-
-                // Filter/range selection button
-                IconButton(
-                  onPressed: () => _showRangeDialog(),
-                  icon: const Icon(Icons.filter_list),
-                  iconSize: 20,
-                  padding: const EdgeInsets.all(8),
-                  constraints: const BoxConstraints(
-                    minWidth: 36,
-                    minHeight: 36,
-                  ),
-                  tooltip: 'Select page range',
-                ),
-
-                // Selection control buttons
-                const SizedBox(width: 4),
-
-                // Select All button
-                IconButton(
-                  onPressed: () {
-                    ref.read(selectedPagesProvider.notifier).selectAll(widget.pageCount);
-                  },
-                  icon: const Icon(Icons.select_all),
-                  iconSize: 20,
-                  padding: const EdgeInsets.all(8),
-                  constraints: const BoxConstraints(
-                    minWidth: 36,
-                    minHeight: 36,
-                  ),
-                  tooltip: 'Select all pages',
-                ),
-
-                // Clear selection button
-                Consumer(
-                  builder: (context, ref, child) {
-                    final selectedPages = ref.watch(selectedPagesProvider);
-                    return IconButton(
-                      onPressed: selectedPages.isNotEmpty
-                        ? () {
-                            ref.read(selectedPagesProvider.notifier).clearSelection();
-                          }
-                        : null, // Disabled when no selection
-                      icon: const Icon(Icons.deselect),
+                    // Filter/range selection button
+                    IconButton(
+                      onPressed: () => _showRangeDialog(),
+                      icon: const Icon(Icons.filter_list),
                       iconSize: 20,
                       padding: const EdgeInsets.all(8),
                       constraints: const BoxConstraints(
                         minWidth: 36,
                         minHeight: 36,
                       ),
-                      tooltip: 'Clear selection',
-                    );
-                  },
+                      tooltip: 'Select page range',
+                    ),
+
+                    // Selection control buttons
+                    const SizedBox(width: 4),
+
+                    // Select All button
+                    IconButton(
+                      onPressed: () {
+                        ref.read(selectedPagesProvider.notifier).selectAll(widget.pageCount);
+                      },
+                      icon: const Icon(Icons.select_all),
+                      iconSize: 20,
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                      tooltip: 'Select all pages',
+                    ),
+
+                    // Clear selection button
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final selectedPages = ref.watch(selectedPagesProvider);
+                        return IconButton(
+                          onPressed: selectedPages.isNotEmpty
+                            ? () {
+                                ref.read(selectedPagesProvider.notifier).clearSelection();
+                              }
+                            : null, // Disabled when no selection
+                          icon: const Icon(Icons.deselect),
+                          iconSize: 20,
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
+                          ),
+                          tooltip: 'Clear selection',
+                        );
+                      },
+                    ),
+
+                    // Invert selection button
+                    IconButton(
+                      onPressed: () {
+                        ref.read(selectedPagesProvider.notifier).invertSelection(widget.pageCount);
+                      },
+                      icon: const Icon(Icons.flip_to_back),
+                      iconSize: 20,
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                      tooltip: 'Invert selection',
+                    ),
+
+                  ],
                 ),
+              ),
 
-                // Invert selection button
-                IconButton(
-                  onPressed: () {
-                    ref.read(selectedPagesProvider.notifier).invertSelection(widget.pageCount);
-                  },
-                  icon: const Icon(Icons.flip_to_back),
-                  iconSize: 20,
-                  padding: const EdgeInsets.all(8),
-                  constraints: const BoxConstraints(
-                    minWidth: 36,
-                    minHeight: 36,
-                  ),
-                  tooltip: 'Invert selection',
-                ),
+              // Preset selection chips
+              PresetChipsBar(pageCount: widget.pageCount),
 
-              ],
-            ),
-          ),
-
-          // Preset selection chips
-          PresetChipsBar(pageCount: widget.pageCount),
-
-          // Page grid
-          Expanded(
-            child: Stack(
-              children: [
-                GridView.builder(
-                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
+              // Page grid
+              Expanded(
+                child: GridView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 160),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
                     crossAxisSpacing: 12,
@@ -566,24 +595,40 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
                     );
                   },
                 ),
-                // Voice input floating bar
-                if (_showVoiceInput)
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: VoiceInputBar(
-                      speechService: _speechService,
-                      pageCount: widget.pageCount,
-                      onPagesSelected: (pages) {
-                        ref.read(selectedPagesProvider.notifier).setSelection(pages);
-                      },
-                      onDismiss: () {
-                        setState(() => _showVoiceInput = false);
-                      },
-                    ),
-                  ),
-              ],
+              ),
+            ],
+          ),
+
+          // Voice input floating bar
+          if (_showVoiceInput)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 80, // Above the FAB
+              child: VoiceInputBar(
+                speechService: _speechService,
+                pageCount: widget.pageCount,
+                context: VoiceContext.pageGrid,
+                recentsService: widget.recentsService,
+                onDismiss: () => setState(() => _showVoiceInput = false),
+                onPagesSelected: (pages) {
+                  ref.read(selectedPagesProvider.notifier).setSelection(pages);
+                },
+                onCloseDocument: () => Navigator.of(context).pop(),
+                onExtract: _extractPages,
+                onScrollToPage: _scrollToPage,
+                onShowHelp: _showHelpSheet,
+                onShowPaywall: _showPaywall,
+              ),
+            ),
+
+          // Voice FAB - bottom right
+          Positioned(
+            right: 24,
+            bottom: 24 + MediaQuery.of(context).padding.bottom,
+            child: VoiceActionButton(
+              onPressed: _toggleVoiceInput,
+              isListening: _showVoiceInput,
             ),
           ),
         ],
