@@ -1,7 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'purchase_service.dart';
 
 /// Service for tracking free tier usage (3 extractions per month)
 /// Uses SharedPreferences to persist usage data across app sessions
+/// Premium users bypass all limits
 class UsageService {
   static const String _extractionCountKey = 'extraction_count';
   static const String _lastResetMonthKey = 'last_reset_month';
@@ -54,7 +56,13 @@ class UsageService {
 
   /// Returns true if the user can perform another extraction
   /// Returns false if the free limit (3 per month) has been reached
+  /// Premium users always return true
   Future<bool> canExtract() async {
+    // Premium users bypass limits
+    if (PurchaseService.isPremium) {
+      return true;
+    }
+
     final count = await getExtractionCount();
     return count < _freeExtractionsPerMonth;
   }

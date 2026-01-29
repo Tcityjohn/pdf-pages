@@ -36,6 +36,11 @@ PODS:
   - Flutter (1.0.0)
   - pdfx (1.0.0):
     - Flutter
+  - PostHog (3.38.0)
+  - posthog_flutter (0.0.1):
+    - Flutter
+    - FlutterMacOS
+    - PostHog (~> 3.22)
   - purchases_flutter (9.10.6):
     - Flutter
     - PurchasesHybridCommon (= 17.27.1)
@@ -51,19 +56,24 @@ PODS:
     - Flutter
     - FlutterMacOS
   - SwiftyGif (5.4.5)
+  - url_launcher_ios (0.0.1):
+    - Flutter
 
 DEPENDENCIES:
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
   - pdfx (from `.symlinks/plugins/pdfx/ios`)
+  - posthog_flutter (from `.symlinks/plugins/posthog_flutter/ios`)
   - purchases_flutter (from `.symlinks/plugins/purchases_flutter/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
+  - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
 
 SPEC REPOS:
   trunk:
     - DKImagePickerController
     - DKPhotoGallery
+    - PostHog
     - PurchasesHybridCommon
     - RevenueCat
     - SDWebImage
@@ -76,12 +86,16 @@ EXTERNAL SOURCES:
     :path: Flutter
   pdfx:
     :path: ".symlinks/plugins/pdfx/ios"
+  posthog_flutter:
+    :path: ".symlinks/plugins/posthog_flutter/ios"
   purchases_flutter:
     :path: ".symlinks/plugins/purchases_flutter/ios"
   share_plus:
     :path: ".symlinks/plugins/share_plus/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
+  url_launcher_ios:
+    :path: ".symlinks/plugins/url_launcher_ios/ios"
 
 SPEC CHECKSUMS:
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
@@ -89,6 +103,8 @@ SPEC CHECKSUMS:
   file_picker: a0560bc09d61de87f12d246fc47d2119e6ef37be
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   pdfx: 77f4dddc48361fbb01486fa2bdee4532cbb97ef3
+  PostHog: b42fd6ae60326411582e97bea5786ba748cab8a0
+  posthog_flutter: 631ab870f7daf1ed190deeb2414eb3e347445f37
   purchases_flutter: 4ae3d41c7a6d14c80fdb26b8a9526091532cd59a
   PurchasesHybridCommon: 027f03312519c51056457eb2e4f7ee1c91b61b8f
   RevenueCat: ecbba580fa453b0d4a0475449b904196d74ef678
@@ -96,6 +112,7 @@ SPEC CHECKSUMS:
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
+  url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
 
 PODFILE CHECKSUM: 0f7f353e9e3c357256f385d75ad8b54e5970b3a4
 

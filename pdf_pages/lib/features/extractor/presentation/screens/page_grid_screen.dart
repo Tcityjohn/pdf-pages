@@ -12,8 +12,10 @@ import '../widgets/export_sheet.dart';
 import '../widgets/preset_chips.dart';
 import '../widgets/page_preview_dialog.dart';
 import '../widgets/voice_input_sheet.dart';
+import '../widgets/paywall_sheet.dart';
 import '../../../../core/services/speech_service.dart';
 import '../../../../core/services/siri_service.dart';
+import '../../../../core/services/analytics_service.dart';
 
 /// Screen that displays PDF pages in a 3-column grid with thumbnails
 /// Users can view all pages from the loaded PDF document
@@ -149,6 +151,8 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
     try {
       final canExtract = await widget.usageService.canExtract();
       if (!canExtract) {
+        // Track paywall shown
+        AnalyticsService.trackPaywallShown(reason: 'free_limit_reached');
         // Show limit reached dialog
         if (mounted) {
           await _showUsageLimitDialog();
@@ -183,6 +187,9 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
         // Don't fail the extraction if usage tracking fails
       }
 
+      // Track extraction analytics
+      AnalyticsService.trackExtractionCompleted(pageCount: selectedPages.length);
+
       // Donate Siri Shortcut for this type of extraction
       try {
         await _siriService.donateAfterExtraction(selectedPages, widget.pageCount);
@@ -216,28 +223,26 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
     }
   }
 
-  /// Show dialog when usage limit is reached
+  /// Show paywall when usage limit is reached
   Future<void> _showUsageLimitDialog() async {
-    final remaining = await widget.usageService.getRemainingExtractions();
     final nextReset = widget.usageService.getNextResetDate();
-    final resetDateStr = '${nextReset.month}/${nextReset.day}/${nextReset.year}';
+    final now = DateTime.now();
+    final daysUntilReset = nextReset.difference(now).inDays;
 
     if (mounted) {
-      await showDialog<void>(
+      final purchased = await showModalBottomSheet<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Extraction Limit Reached'),
-          content: Text(
-            'You have used all $remaining free extractions this month. Your limit will reset on $resetDateStr.\n\nUpgrade to Premium for unlimited extractions.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (context) => PaywallSheet(
+          daysUntilReset: daysUntilReset,
         ),
       );
+
+      // If user purchased, try extraction again
+      if (purchased == true && mounted) {
+        _extractPages();
+      }
     }
   }
 

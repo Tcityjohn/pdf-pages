@@ -3,10 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'core/services/pdf_service.dart';
 import 'core/services/usage_service.dart';
+import 'core/services/analytics_service.dart';
+import 'core/services/purchase_service.dart';
 import 'core/widgets/shared_ui.dart';
 import 'features/extractor/presentation/screens/page_grid_screen.dart';
+import 'features/settings/presentation/screens/settings_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AnalyticsService.initialize();
+  await PurchaseService.initialize();
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -45,7 +51,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final PdfService _pdfService = PdfService();
   final UsageService _usageService = UsageService();
-  String? _errorMessage;
   bool _isPickingFile = false;
   bool _usageServiceInitialized = false;
   int _remainingExtractions = 3; // Default value until loaded
@@ -77,10 +82,33 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// Show error dialog for PDF loading errors
+  Future<void> _showPdfErrorDialog(String message) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cannot Open PDF'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _pickPdfFile(); // Try again with a different file
+            },
+            child: const Text('Try Another'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _pickPdfFile() async {
     setState(() {
       _isPickingFile = true;
-      _errorMessage = null;
     });
 
     try {
@@ -98,6 +126,9 @@ class _HomePageState extends State<HomePage> {
         // Try to load the PDF
         try {
           final pageCount = await _pdfService.loadPdf(filePath);
+
+          // Track PDF opened
+          AnalyticsService.trackPdfOpened(pageCount: pageCount);
 
           setState(() {
             _isPickingFile = false;
@@ -127,8 +158,11 @@ class _HomePageState extends State<HomePage> {
         } on PdfLoadException catch (e) {
           setState(() {
             _isPickingFile = false;
-            _errorMessage = e.toString();
           });
+          // Show error dialog
+          if (mounted) {
+            _showPdfErrorDialog(e.toString());
+          }
         }
       } else {
         // User cancelled
@@ -139,8 +173,10 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       setState(() {
         _isPickingFile = false;
-        _errorMessage = 'Error picking file: ${e.toString()}';
       });
+      if (mounted) {
+        _showPdfErrorDialog('Error picking file: ${e.toString()}');
+      }
     }
   }
 
@@ -157,6 +193,18 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.white),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const SettingsScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       child: SafeArea(
         child: Padding(
@@ -290,29 +338,6 @@ class _HomePageState extends State<HomePage> {
                 onPressed: _isPickingFile ? null : _pickPdfFile,
                 isLoading: _isPickingFile,
               ),
-
-              const SizedBox(height: 24),
-
-              // Display error message
-              if (_errorMessage != null)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Text(
-                    _errorMessage!,
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
 
               const Spacer(flex: 1),
             ],

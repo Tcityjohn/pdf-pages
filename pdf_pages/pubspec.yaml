@@ -54,6 +54,12 @@ dependencies:
   # Local storage
   shared_preferences: ^2.2.2
 
+  # Analytics
+  posthog_flutter: ^4.0.1
+
+  # URL launching
+  url_launcher: ^6.2.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

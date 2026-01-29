@@ -3,6 +3,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import '../../../../core/widgets/shared_ui.dart';
+import '../../../../core/services/analytics_service.dart';
 
 /// Bottom sheet widget that appears after successful PDF extraction
 /// Allows user to share or save the extracted PDF file
@@ -38,6 +39,7 @@ class ExportSheet extends StatelessWidget {
   /// Share the PDF using iOS share sheet
   Future<void> _sharePdf(BuildContext context) async {
     try {
+      AnalyticsService.trackShare();
       final box = context.findRenderObject() as RenderBox?;
       await Share.shareXFiles(
         [XFile(extractedFilePath)],
@@ -77,7 +79,7 @@ class ExportSheet extends StatelessWidget {
 
       if (savedPath != null) {
         debugPrint('PDF saved to: $savedPath');
-        // Could show a success toast here in the future
+        AnalyticsService.trackSaveToFiles();
       }
     } catch (e) {
       debugPrint('Error saving PDF: $e');
