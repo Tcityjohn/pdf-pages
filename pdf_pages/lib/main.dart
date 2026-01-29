@@ -401,15 +401,16 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-          // Voice FAB - bottom right (positioned above safe area to avoid Select PDF button)
-          Positioned(
-            right: 24,
-            bottom: 120 + MediaQuery.of(context).padding.bottom,
-            child: VoiceActionButton(
-              onPressed: _toggleVoiceInput,
-              isListening: _showVoiceInput,
+          // Voice FAB - bottom right (hidden when voice input bar is showing)
+          if (!_showVoiceInput)
+            Positioned(
+              right: 24,
+              bottom: 24 + MediaQuery.of(context).padding.bottom,
+              child: VoiceActionButton(
+                onPressed: _toggleVoiceInput,
+                isListening: false,
+              ),
             ),
-          ),
         ],
       ),
     );

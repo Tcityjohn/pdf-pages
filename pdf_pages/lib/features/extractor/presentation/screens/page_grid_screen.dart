@@ -622,15 +622,16 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
               ),
             ),
 
-          // Voice FAB - bottom right
-          Positioned(
-            right: 24,
-            bottom: 24 + MediaQuery.of(context).padding.bottom,
-            child: VoiceActionButton(
-              onPressed: _toggleVoiceInput,
-              isListening: _showVoiceInput,
+          // Voice FAB - bottom right (hidden when voice input bar is showing)
+          if (!_showVoiceInput)
+            Positioned(
+              right: 24,
+              bottom: 24 + MediaQuery.of(context).padding.bottom,
+              child: VoiceActionButton(
+                onPressed: _toggleVoiceInput,
+                isListening: false,
+              ),
             ),
-          ),
         ],
       ),
     );

@@ -63,7 +63,6 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
   String _transcription = '';
   VoiceCommandResult? _parsedCommand;
   SpeechState _state = SpeechState.idle;
-  SpeechState _previousState = SpeechState.idle;
   bool _permissionGranted = false;
   bool _isAvailable = false;
   String? _feedbackMessage;
@@ -136,9 +135,10 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
     });
 
     _stateSub = widget.speechService.stateStream.listen((state) {
-      final wasListening = _previousState == SpeechState.listening;
+      // Check if we WERE listening before this state change
+      final wasListening = _state == SpeechState.listening;
+
       setState(() {
-        _previousState = _state;
         _state = state;
       });
 
@@ -152,7 +152,12 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
         if (wasListening && state == SpeechState.idle && !_isExecuting) {
           final command = _parsedCommand;
           if (command != null && command.type != VoiceCommandType.unrecognized) {
-            _executeCommand();
+            // Small delay to let final transcription settle
+            Future.delayed(const Duration(milliseconds: 300), () {
+              if (mounted && !_isExecuting) {
+                _executeCommand();
+              }
+            });
           }
         }
       }
