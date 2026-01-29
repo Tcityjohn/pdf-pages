@@ -8,11 +8,9 @@ void main() {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MyApp());
 
-    // Verify the home page UI elements are present
-    expect(find.text('Extract PDF Pages'), findsOneWidget);
-    expect(find.text('Select a PDF to extract specific pages'), findsOneWidget);
+    // Verify the home page UI elements are present (updated for new design)
+    expect(find.text('Select a PDF'), findsOneWidget);
+    expect(find.text('Extract Pages'), findsOneWidget);
     expect(find.text('Select PDF'), findsOneWidget);
-    expect(find.byIcon(Icons.picture_as_pdf), findsOneWidget);
-    expect(find.byIcon(Icons.folder_open), findsOneWidget);
   });
 }

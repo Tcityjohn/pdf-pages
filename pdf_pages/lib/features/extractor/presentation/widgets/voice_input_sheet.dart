@@ -61,6 +61,7 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
   StreamSubscription<SpeechState>? _stateSub;
 
   String _transcription = '';
+  String _lastTranscription = ''; // Track last transcription to detect changes
   VoiceCommandResult? _parsedCommand;
   SpeechState _state = SpeechState.idle;
   bool _permissionGranted = false;
@@ -69,9 +70,9 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
   bool _feedbackSuccess = true;
   bool _isExecuting = false;
 
-  // Silence timeout - stops listening after no speech for 1.5 seconds
+  // Silence timeout - stops listening after no NEW speech for 2 seconds
   Timer? _silenceTimer;
-  static const _silenceTimeout = Duration(milliseconds: 1500);
+  static const _silenceTimeout = Duration(milliseconds: 2000);
 
   late VoiceCommandHandler _commandHandler;
 
@@ -127,8 +128,12 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
   void _setupListeners() {
     _transcriptionSub =
         widget.speechService.transcriptionStream.listen((text) {
+      // Only reset timer if transcription actually changed (user is still speaking)
+      final transcriptionChanged = text != _lastTranscription;
+
       setState(() {
         _transcription = text;
+        _lastTranscription = text;
         _parsedCommand = widget.speechService.parseVoiceCommand(
           text,
           widget.pageCount,
@@ -137,8 +142,11 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
         _feedbackMessage = null; // Clear feedback when new transcription comes
       });
 
-      // Reset silence timer - when user stops speaking, we'll auto-stop after timeout
-      _resetSilenceTimer();
+      // Only reset silence timer when transcription changes
+      // This way, repeated identical transcriptions don't keep resetting the timer
+      if (transcriptionChanged) {
+        _resetSilenceTimer();
+      }
     });
 
     _stateSub = widget.speechService.stateStream.listen((state) {
@@ -172,6 +180,10 @@ class _VoiceInputBarState extends ConsumerState<VoiceInputBar>
   }
 
   Future<void> _startListening() async {
+    // Reset state for new listening session
+    _lastTranscription = '';
+    _cancelSilenceTimer();
+
     HapticFeedback.mediumImpact();
     await widget.speechService.startListening();
   }
