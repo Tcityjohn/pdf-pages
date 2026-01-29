@@ -5,12 +5,9 @@ import 'core/services/pdf_service.dart';
 import 'core/services/usage_service.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/purchase_service.dart';
-import 'core/services/speech_service.dart';
 import 'core/services/recents_service.dart';
 import 'core/widgets/shared_ui.dart';
 import 'features/extractor/presentation/screens/page_grid_screen.dart';
-import 'features/extractor/presentation/widgets/voice_input_sheet.dart';
-import 'features/extractor/presentation/widgets/voice_help_sheet.dart';
 import 'features/settings/presentation/screens/settings_screen.dart';
 
 void main() async {
@@ -55,13 +52,11 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final PdfService _pdfService = PdfService();
   final UsageService _usageService = UsageService();
-  final SpeechService _speechService = SpeechService();
   final RecentsService _recentsService = RecentsService();
 
   bool _isPickingFile = false;
   bool _usageServiceInitialized = false;
   int _remainingExtractions = 3;
-  bool _showVoiceInput = false;
 
   @override
   void initState() {
@@ -194,27 +189,9 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _openRecentFile(String path) async {
-    // Extract filename from path
-    final parts = path.split('/');
-    final fileName = parts.isNotEmpty ? parts.last : 'document.pdf';
-    await _openPdfFile(path, fileName);
-  }
-
-  void _toggleVoiceInput() {
-    setState(() {
-      _showVoiceInput = !_showVoiceInput;
-    });
-  }
-
-  void _showHelpSheet() {
-    VoiceHelpSheet.show(context, VoiceContext.home);
-  }
-
   @override
   void dispose() {
     _pdfService.closeDocument();
-    _speechService.dispose();
     super.dispose();
   }
 
@@ -237,181 +214,143 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      child: Stack(
-        children: [
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0),
-              child: Column(
-                children: [
-                  const Spacer(flex: 2),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32.0),
+          child: Column(
+            children: [
+              const Spacer(flex: 2),
 
-                  // Typography hierarchy - Soft Minimal style
-                  Text(
-                    'Select a PDF',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white.withValues(alpha: 0.85),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Extract Pages',
-                    style: TextStyle(
-                      fontSize: 42,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -1,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Subtitle
-                  Text(
-                    'Select specific pages from any PDF\nand save them as a new document',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white.withValues(alpha: 0.8),
-                      height: 1.4,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const Spacer(flex: 1),
-
-                  // Privacy badge - minimal style
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.lock_outline,
-                          size: 16,
-                          color: Colors.white.withValues(alpha: 0.9),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Your documents never leave your device',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Usage banner - subtle style
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    child: Row(
-                      children: [
-                        // Usage dots
-                        Row(
-                          children: [
-                            for (int i = 0; i < 3; i++)
-                              Padding(
-                                padding: EdgeInsets.only(right: i < 2 ? 6 : 0),
-                                child: Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: i < _remainingExtractions
-                                        ? Colors.white
-                                        : Colors.white.withValues(alpha: 0.3),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            '$_remainingExtractions free extractions left',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white.withValues(alpha: 0.9),
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          Icons.chevron_right,
-                          size: 18,
-                          color: Colors.white.withValues(alpha: 0.7),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const Spacer(flex: 1),
-
-                  // Black pill CTA button
-                  AppButton(
-                    label: _isPickingFile ? 'Opening...' : 'Select PDF',
-                    onPressed: _isPickingFile ? null : _pickPdfFile,
-                    isLoading: _isPickingFile,
-                  ),
-
-                  const Spacer(flex: 1),
-                ],
-              ),
-            ),
-          ),
-
-          // Voice input bar (when active)
-          if (_showVoiceInput)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 80),
-                  child: VoiceInputBar(
-                    speechService: _speechService,
-                    pageCount: 0,
-                    context: VoiceContext.home,
-                    recentsService: _recentsService,
-                    onDismiss: () => setState(() => _showVoiceInput = false),
-                    onOpenFilePicker: _pickPdfFile,
-                    onOpenRecentFile: _openRecentFile,
-                    onShowHelp: _showHelpSheet,
-                  ),
+              // Typography hierarchy - Soft Minimal style
+              Text(
+                'Select a PDF',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.85),
                 ),
               ),
-            ),
-
-          // Voice FAB - bottom right (hidden when voice input bar is showing)
-          if (!_showVoiceInput)
-            Positioned(
-              right: 24,
-              bottom: 24 + MediaQuery.of(context).padding.bottom,
-              child: VoiceActionButton(
-                onPressed: _toggleVoiceInput,
-                isListening: false,
+              const SizedBox(height: 8),
+              const Text(
+                'Extract Pages',
+                style: TextStyle(
+                  fontSize: 42,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -1,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-        ],
+              const SizedBox(height: 12),
+
+              // Subtitle
+              Text(
+                'Select specific pages from any PDF\nand save them as a new document',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white.withValues(alpha: 0.8),
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const Spacer(flex: 1),
+
+              // Privacy badge - minimal style
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.lock_outline,
+                      size: 16,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Your documents never leave your device',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Usage banner - subtle style
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                child: Row(
+                  children: [
+                    // Usage dots
+                    Row(
+                      children: [
+                        for (int i = 0; i < 3; i++)
+                          Padding(
+                            padding: EdgeInsets.only(right: i < 2 ? 6 : 0),
+                            child: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: i < _remainingExtractions
+                                    ? Colors.white
+                                    : Colors.white.withValues(alpha: 0.3),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '$_remainingExtractions free extractions left',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
+                  ],
+                ),
+              ),
+
+              const Spacer(flex: 1),
+
+              // Black pill CTA button
+              AppButton(
+                label: _isPickingFile ? 'Opening...' : 'Select PDF',
+                onPressed: _isPickingFile ? null : _pickPdfFile,
+                isLoading: _isPickingFile,
+              ),
+
+              const Spacer(flex: 1),
+            ],
+          ),
+        ),
       ),
     );
   }
