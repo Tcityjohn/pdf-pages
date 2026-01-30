@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Pages - App Store Screenshots</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a1a;
+            padding: 40px;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .page-title {
+            color: #fff;
+            font-family: 'Fraunces', serif;
+            font-size: 32px;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .page-subtitle {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 40px;
+        }
+
+        .screenshots-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            justify-content: flex-start;
+        }
+
+        .screenshot-wrapper {
+            position: relative;
+        }
+
+        .screenshot-label {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Each mockup at exact App Store dimensions - 6.7" iPhone */
+        .mockup {
+            width: 1290px;
+            height: 2796px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(165deg, #E63946 0%, #D32F3F 50%, #B52534 100%);
+            display: flex;
+            flex-direction: column;
+            border-radius: 12px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+        }
+
+        /* Scaled preview for easier viewing */
+        .mockup-preview {
+            transform: scale(0.2);
+            transform-origin: top left;
+            margin-bottom: -2236px;
+            margin-right: -1032px;
+        }
+
+        /* Text overlay banner */
+        .text-banner {
+            padding: 140px 80px 100px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .text-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg,
+                rgba(180, 40, 50, 0.9) 0%,
+                rgba(180, 40, 50, 0.6) 60%,
+                rgba(180, 40, 50, 0) 100%
+            );
+            z-index: -1;
+        }
+
+        .headline {
+            font-family: 'Fraunces', serif;
+            font-size: 96px;
+            font-weight: 600;
+            color: #fff;
+            line-height: 1.1;
+            text-shadow: 0 4px 30px rgba(0,0,0,0.3);
+            letter-spacing: -1px;
+        }
+
+        .subheadline {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 42px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.85);
+            margin-top: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Screenshot container */
+        .screenshot-container {
+            flex: 1;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 0 65px 65px;
+            position: relative;
+        }
+
+        .screenshot-frame {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 55px;
+            overflow: hidden;
+            box-shadow:
+                0 25px 80px rgba(0,0,0,0.4),
+                0 0 0 12px rgba(255,255,255,0.1),
+                inset 0 0 0 1px rgba(255,255,255,0.1);
+            background: #000;
+        }
+
+        .screenshot-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top center;
+        }
+
+        /* Decorative elements */
+        .mockup::after {
+            content: '';
+            position: absolute;
+            top: -200px;
+            right: -200px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255,150,150,0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* Instructions panel */
+        .instructions {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 12px;
+            color: #ccc;
+            font-size: 13px;
+            max-width: 320px;
+            line-height: 1.5;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .instructions strong {
+            color: #E63946;
+        }
+
+        .instructions ol {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 6px;
+        }
+
+        .fullsize-link {
+            display: inline-block;
+            margin-top: 8px;
+            color: #E63946;
+            text-decoration: none;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .fullsize-link:hover {
+            text-decoration: underline;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            margin-left: 8px;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: #444;
+            color: #888;
+        }
+
+        .status-ready {
+            background: #2E7D32;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="page-title">PDF Pages App Store Screenshots</h1>
+    <p class="page-subtitle">6.7" iPhone (1290 x 2796) - Preview at 20% scale. Click each to view full size for export.</p>
+
+    <div class="screenshots-grid">
+
+        <!-- Screenshot 1: Home Screen -->
+        <div class="screenshot-wrapper">
+            <div class="screenshot-label">01 - Home <span class="status status-pending">Need Screenshot</span></div>
+            <div class="mockup mockup-preview" id="mockup-1">
+                <div class="text-banner">
+                    <h2 class="headline">Extract Any<br>Pages</h2>
+                    <p class="subheadline">From any PDF, in seconds</p>
+                </div>
+                <div class="screenshot-container">
+                    <div class="screenshot-frame">
+                        <img src="01_home.png" alt="Home screen">
+                    </div>
+                </div>
+            </div>
+            <a href="#" class="fullsize-link" onclick="openFullsize(1)">View Full Size</a>
+        </div>
+
+        <!-- Screenshot 2: Page Grid -->
+        <div class="screenshot-wrapper">
+            <div class="screenshot-label">02 - Page Selection <span class="status status-pending">Need Screenshot</span></div>
+            <div class="mockup mockup-preview" id="mockup-2">
+                <div class="text-banner">
+                    <h2 class="headline">Tap to<br>Select</h2>
+                    <p class="subheadline">Choose exactly the pages you need</p>
+                </div>
+                <div class="screenshot-container">
+                    <div class="screenshot-frame">
+                        <img src="02_pages.png" alt="Page selection screen">
+                    </div>
+                </div>
+            </div>
+            <a href="#" class="fullsize-link" onclick="openFullsize(2)">View Full Size</a>
+        </div>
+
+        <!-- Screenshot 3: Export Sheet -->
+        <div class="screenshot-wrapper">
+            <div class="screenshot-label">03 - Export <span class="status status-pending">Need Screenshot</span></div>
+            <div class="mockup mockup-preview" id="mockup-3">
+                <div class="text-banner">
+                    <h2 class="headline">Share<br>Anywhere</h2>
+                    <p class="subheadline">Save, print, or send your new PDF</p>
+                </div>
+                <div class="screenshot-container">
+                    <div class="screenshot-frame">
+                        <img src="03_export.png" alt="Export screen">
+                    </div>
+                </div>
+            </div>
+            <a href="#" class="fullsize-link" onclick="openFullsize(3)">View Full Size</a>
+        </div>
+
+        <!-- Screenshot 4: Privacy / Local Processing -->
+        <div class="screenshot-wrapper">
+            <div class="screenshot-label">04 - Privacy <span class="status status-pending">Need Screenshot</span></div>
+            <div class="mockup mockup-preview" id="mockup-4">
+                <div class="text-banner">
+                    <h2 class="headline">100%<br>Private</h2>
+                    <p class="subheadline">Files never leave your device</p>
+                </div>
+                <div class="screenshot-container">
+                    <div class="screenshot-frame">
+                        <img src="04_privacy.png" alt="Privacy screen">
+                    </div>
+                </div>
+            </div>
+            <a href="#" class="fullsize-link" onclick="openFullsize(4)">View Full Size</a>
+        </div>
+
+    </div>
+
+    <div class="instructions">
+        <strong>Screenshot Capture Process:</strong>
+        <ol>
+            <li>Take screenshots in iPhone 15 Pro Max Simulator</li>
+            <li>Save to this folder as 01_home.png, 02_pages.png, etc.</li>
+            <li>Refresh this page to see previews</li>
+            <li>Click "View Full Size" to open at exact dimensions</li>
+            <li>Use Cmd+Shift+4 to capture the full-size window</li>
+        </ol>
+        <br>
+        <strong>Screenshots needed:</strong>
+        <ol>
+            <li>Home screen (as-is)</li>
+            <li>Page grid with ~4 pages selected</li>
+            <li>Export sheet open</li>
+            <li>Home screen (for privacy message)</li>
+        </ol>
+    </div>
+
+    <script>
+        function openFullsize(num) {
+            const mockup = document.getElementById('mockup-' + num).cloneNode(true);
+            mockup.classList.remove('mockup-preview');
+            mockup.style.margin = '0';
+
+            const win = window.open('', '_blank', `width=1290,height=2796,scrollbars=no`);
+            win.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Screenshot ${num}</title>
+                    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+                    <style>
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        body { width: 1290px; height: 2796px; overflow: hidden; }
+                        ${document.querySelector('style').textContent}
+                        .mockup { border-radius: 0; box-shadow: none; }
+                    </style>
+                </head>
+                <body>${mockup.outerHTML}</body>
+                </html>
+            `);
+            win.document.close();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Pages - Home Screen Options</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            background: #1a1a1a;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .options-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .mockup-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .label {
+            color: #888;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .label-highlight {
+            color: #4CAF50;
+        }
+
+        .phone-frame {
+            width: 280px;
+            height: 606px;
+            border-radius: 40px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+        }
+
+        .screen-content {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 50px 20px 32px;
+        }
+
+        /* Option A: Shorter gradient - stays in coral range */
+        .screen-a {
+            background: linear-gradient(
+                to bottom,
+                #E63946 0%,
+                #EF6B6B 40%,
+                #F4A4A8 100%
+            );
+        }
+
+        /* Option B: Dark tinted pills on current gradient */
+        .screen-b {
+            background: linear-gradient(
+                to bottom,
+                #E63946 0%,
+                #EF6B6B 30%,
+                #F9C4C8 60%,
+                #FFF5F3 100%
+            );
+        }
+
+        /* Option C: Coral/red filled pills */
+        .screen-c {
+            background: linear-gradient(
+                to bottom,
+                #E63946 0%,
+                #EF6B6B 30%,
+                #F9C4C8 60%,
+                #FFF5F3 100%
+            );
+        }
+
+        /* Option D: Glassmorphism with border */
+        .screen-d {
+            background: linear-gradient(
+                to bottom,
+                #E63946 0%,
+                #EF6B6B 30%,
+                #F9C4C8 60%,
+                #FFF8F7 100%
+            );
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 4px;
+            margin-bottom: 16px;
+        }
+
+        .time {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .settings-icon {
+            width: 22px;
+            height: 22px;
+            color: white;
+            opacity: 0.9;
+        }
+
+        .spacer { flex: 1; }
+        .spacer-small { flex: 0.5; }
+
+        .hero-text { text-align: center; }
+
+        .subtitle {
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.85);
+            margin-bottom: 6px;
+        }
+
+        .title {
+            font-size: 34px;
+            font-weight: 600;
+            color: white;
+            letter-spacing: -1px;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+            line-height: 1.5;
+        }
+
+        /* OPTION A: White pills work on darker gradient */
+        .pill-a {
+            background: rgba(255,255,255,0.25);
+            border-radius: 20px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            justify-content: center;
+        }
+
+        .usage-pill-a {
+            background: rgba(255,255,255,0.2);
+            border-radius: 14px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* OPTION B: Dark semi-transparent pills */
+        .pill-b {
+            background: rgba(0,0,0,0.12);
+            border-radius: 20px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            justify-content: center;
+        }
+
+        .usage-pill-b {
+            background: rgba(0,0,0,0.1);
+            border-radius: 14px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pill-b .pill-text,
+        .pill-b .pill-icon,
+        .usage-pill-b .usage-text,
+        .usage-pill-b .chevron,
+        .usage-pill-b .dot {
+            color: rgba(0,0,0,0.7) !important;
+        }
+
+        .usage-pill-b .dot {
+            background: rgba(0,0,0,0.6) !important;
+        }
+
+        /* OPTION C: Solid coral/red pills */
+        .pill-c {
+            background: #E63946;
+            border-radius: 20px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(230,57,70,0.3);
+        }
+
+        .usage-pill-c {
+            background: #E63946;
+            border-radius: 14px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(230,57,70,0.3);
+        }
+
+        /* OPTION D: Glass with visible border */
+        .pill-d {
+            background: rgba(255,255,255,0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.6);
+            border-radius: 20px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            justify-content: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .usage-pill-d {
+            background: rgba(255,255,255,0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.6);
+            border-radius: 14px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .pill-d .pill-text,
+        .pill-d .pill-icon {
+            color: rgba(0,0,0,0.75) !important;
+        }
+
+        .usage-pill-d .usage-text,
+        .usage-pill-d .chevron {
+            color: rgba(0,0,0,0.7) !important;
+        }
+
+        .usage-pill-d .dot {
+            background: #E63946 !important;
+        }
+
+        .pill-icon {
+            width: 14px;
+            height: 14px;
+            color: rgba(255,255,255,0.9);
+            flex-shrink: 0;
+        }
+
+        .pill-text {
+            font-size: 12px;
+            color: rgba(255,255,255,0.95);
+        }
+
+        .usage-dots {
+            display: flex;
+            gap: 5px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: white;
+        }
+
+        .usage-text {
+            flex: 1;
+            font-size: 13px;
+            color: rgba(255,255,255,0.95);
+        }
+
+        .chevron {
+            width: 16px;
+            height: 16px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .cta-button {
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 100px;
+            padding: 16px 28px;
+            font-size: 15px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .changes-list {
+            color: #777;
+            font-size: 12px;
+            line-height: 1.7;
+            max-width: 280px;
+            text-align: center;
+        }
+
+        .page-title {
+            color: #fff;
+            font-size: 24px;
+            font-weight: 300;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="page-title">Home Screen Options</h1>
+
+    <div class="options-grid">
+        <!-- OPTION A: Shorter gradient -->
+        <div class="mockup-container">
+            <div class="label">Option A</div>
+            <div class="phone-frame">
+                <div class="screen-a screen-content">
+                    <div class="status-bar">
+                        <span class="time">9:08</span>
+                        <svg class="settings-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="spacer"></div>
+                    <div class="hero-text">
+                        <div class="subtitle">Select a PDF</div>
+                        <div class="title">Extract Pages</div>
+                        <div class="description">Select specific pages from any PDF<br>and save them as a new document</div>
+                    </div>
+                    <div class="spacer-small"></div>
+                    <div class="pill-a">
+                        <svg class="pill-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        <span class="pill-text">Your documents never leave your device</span>
+                    </div>
+                    <div class="usage-pill-a">
+                        <div class="usage-dots">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                        <span class="usage-text">3 free extractions left</span>
+                        <svg class="chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div class="spacer-small"></div>
+                    <button class="cta-button">Select PDF</button>
+                    <div class="spacer-small"></div>
+                </div>
+            </div>
+            <div class="changes-list">
+                Gradient stays warm throughout<br>
+                Never fades to white<br>
+                White pills always readable
+            </div>
+        </div>
+
+        <!-- OPTION B: Dark semi-transparent pills -->
+        <div class="mockup-container">
+            <div class="label">Option B</div>
+            <div class="phone-frame">
+                <div class="screen-b screen-content">
+                    <div class="status-bar">
+                        <span class="time">9:08</span>
+                        <svg class="settings-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="spacer"></div>
+                    <div class="hero-text">
+                        <div class="subtitle">Select a PDF</div>
+                        <div class="title">Extract Pages</div>
+                        <div class="description">Select specific pages from any PDF<br>and save them as a new document</div>
+                    </div>
+                    <div class="spacer-small"></div>
+                    <div class="pill-b">
+                        <svg class="pill-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        <span class="pill-text">Your documents never leave your device</span>
+                    </div>
+                    <div class="usage-pill-b">
+                        <div class="usage-dots">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                        <span class="usage-text">3 free extractions left</span>
+                        <svg class="chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div class="spacer-small"></div>
+                    <button class="cta-button">Select PDF</button>
+                    <div class="spacer-small"></div>
+                </div>
+            </div>
+            <div class="changes-list">
+                Dark semi-transparent pills<br>
+                Dark text for contrast<br>
+                Works on any background
+            </div>
+        </div>
+
+        <!-- OPTION C: Solid coral pills -->
+        <div class="mockup-container">
+            <div class="label label-highlight">Option C (Recommended)</div>
+            <div class="phone-frame">
+                <div class="screen-c screen-content">
+                    <div class="status-bar">
+                        <span class="time">9:08</span>
+                        <svg class="settings-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="spacer"></div>
+                    <div class="hero-text">
+                        <div class="subtitle">Select a PDF</div>
+                        <div class="title">Extract Pages</div>
+                        <div class="description">Select specific pages from any PDF<br>and save them as a new document</div>
+                    </div>
+                    <div class="spacer-small"></div>
+                    <div class="pill-c">
+                        <svg class="pill-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        <span class="pill-text">Your documents never leave your device</span>
+                    </div>
+                    <div class="usage-pill-c">
+                        <div class="usage-dots">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                        <span class="usage-text">3 free extractions left</span>
+                        <svg class="chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div class="spacer-small"></div>
+                    <button class="cta-button">Select PDF</button>
+                    <div class="spacer-small"></div>
+                </div>
+            </div>
+            <div class="changes-list">
+                Solid brand-color pills<br>
+                White text, always readable<br>
+                Professional, intentional look
+            </div>
+        </div>
+
+        <!-- OPTION D: Frosted glass with border -->
+        <div class="mockup-container">
+            <div class="label">Option D</div>
+            <div class="phone-frame">
+                <div class="screen-d screen-content">
+                    <div class="status-bar">
+                        <span class="time">9:08</span>
+                        <svg class="settings-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="spacer"></div>
+                    <div class="hero-text">
+                        <div class="subtitle">Select a PDF</div>
+                        <div class="title">Extract Pages</div>
+                        <div class="description">Select specific pages from any PDF<br>and save them as a new document</div>
+                    </div>
+                    <div class="spacer-small"></div>
+                    <div class="pill-d">
+                        <svg class="pill-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        <span class="pill-text">Your documents never leave your device</span>
+                    </div>
+                    <div class="usage-pill-d">
+                        <div class="usage-dots">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                        <span class="usage-text">3 free extractions left</span>
+                        <svg class="chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div class="spacer-small"></div>
+                    <button class="cta-button">Select PDF</button>
+                    <div class="spacer-small"></div>
+                </div>
+            </div>
+            <div class="changes-list">
+                Frosted glass effect<br>
+                White border for definition<br>
+                Dark text, coral dots
+            </div>
+        </div>
+    </div>
+</body>
+</html>

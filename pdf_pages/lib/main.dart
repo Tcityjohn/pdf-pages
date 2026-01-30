@@ -24,6 +24,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'PDF Pages',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
@@ -256,14 +257,25 @@ class _HomePageState extends State<HomePage> {
 
               const Spacer(flex: 1),
 
-              // Privacy badge - minimal style
+              // Privacy badge - frosted glass style
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Colors.white.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
+                  horizontal: 14,
                   vertical: 8,
                 ),
                 child: Row(
@@ -271,15 +283,15 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Icon(
                       Icons.lock_outline,
-                      size: 16,
-                      color: Colors.white.withValues(alpha: 0.9),
+                      size: 14,
+                      color: Colors.black.withValues(alpha: 0.75),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Text(
-                      'Your documents never leave your device',
+                      'Documents never leave your device',
                       style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 12,
+                        color: Colors.black.withValues(alpha: 0.75),
                       ),
                     ),
                   ],
@@ -287,12 +299,23 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 24),
 
-              // Usage banner - subtle style
+              // Usage banner - frosted glass style
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: Colors.white.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -300,7 +323,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 child: Row(
                   children: [
-                    // Usage dots
+                    // Usage dots - coral colored
                     Row(
                       children: [
                         for (int i = 0; i < 3; i++)
@@ -312,8 +335,8 @@ class _HomePageState extends State<HomePage> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: i < _remainingExtractions
-                                    ? Colors.white
-                                    : Colors.white.withValues(alpha: 0.3),
+                                    ? AppColors.primary
+                                    : AppColors.primary.withValues(alpha: 0.3),
                               ),
                             ),
                           ),
@@ -325,14 +348,14 @@ class _HomePageState extends State<HomePage> {
                         '$_remainingExtractions free extractions left',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: Colors.black.withValues(alpha: 0.7),
                         ),
                       ),
                     ),
                     Icon(
                       Icons.chevron_right,
                       size: 18,
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: Colors.black.withValues(alpha: 0.5),
                     ),
                   ],
                 ),

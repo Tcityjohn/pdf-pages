@@ -41,7 +41,7 @@ class GradientScaffold extends StatelessWidget {
                   AppColors.primary,
                   AppColors.primaryLight,
                   AppColors.primaryPale,
-                  Colors.white,
+                  Color(0xFFFFF8F7), // Soft warm white instead of pure white
                 ],
             stops: stops ?? const [0.0, 0.3, 0.6, 1.0],
           ),
