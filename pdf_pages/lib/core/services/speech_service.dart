@@ -232,7 +232,11 @@ class SpeechService {
       r'(?:save\s+as|extract\s+(?:and\s+)?(?:rename|name)|name\s+it|call\s+it)\s+(.+)',
     ).firstMatch(normalizedText);
     if (saveAsMatch != null) {
-      final customName = saveAsMatch.group(1)?.trim();
+      var customName = saveAsMatch.group(1)?.trim();
+      // Remove trailing "pdf" if present (user might say "save as purple pdf")
+      if (customName != null && customName.toLowerCase().endsWith(' pdf')) {
+        customName = customName.substring(0, customName.length - 4).trim();
+      }
       if (customName != null && customName.isNotEmpty) {
         return VoiceCommandResult(
           type: VoiceCommandType.extractWithName,
@@ -241,8 +245,22 @@ class SpeechService {
       }
     }
 
-    // "extract" / "extract pages"
-    if (_matchesAny(normalizedText, ['extract', 'extract pages', 'save', 'export'])) {
+    // "extract pages X, Y, Z" - select those pages AND extract
+    final extractPagesMatch = RegExp(r'^extract\s+(?:pages?\s+)?(.+)$').firstMatch(normalizedText);
+    if (extractPagesMatch != null) {
+      final pagesText = extractPagesMatch.group(1)!;
+      // Don't match if it's just "extract pages" with no numbers
+      if (pagesText != 'pages' && pagesText.isNotEmpty) {
+        final pages = _parsePageSelection(pagesText, pageCount);
+        if (pages != null && pages.isNotEmpty) {
+          // Return selectPages - the handler can then auto-extract after selection
+          return VoiceCommandResult(type: VoiceCommandType.selectPages, pages: pages);
+        }
+      }
+    }
+
+    // "extract" (alone) / "save" / "export"
+    if (normalizedText == 'extract' || normalizedText == 'save' || normalizedText == 'export') {
       return const VoiceCommandResult(type: VoiceCommandType.extract);
     }
 
@@ -366,11 +384,12 @@ class SpeechService {
       return pageCount >= 1 ? {pageCount} : {};
     }
 
-    // Handle ranges: "X through Y", "X to Y", "X thru Y", "X - Y"
-    // Patterns: "pages 1 to 5", "1 through 5", "pages 1-5"
+    // Handle ranges: "X through Y", "X to Y", "from X to Y", "X thru Y", "X - Y"
+    // Patterns: "pages 1 to 5", "1 through 5", "from 2 to 6", "pages 1-5"
     final rangePatterns = [
-      RegExp(r'(?:pages?\s+)?(\w+)\s+(?:through|to|thru)\s+(\w+)'),
-      RegExp(r'(?:pages?\s+)?(\d+)\s*[-–]\s*(\d+)'),
+      RegExp(r'from\s+(\w+)\s+(?:through|to|thru)\s+(\w+)'),  // "from 2 to 6"
+      RegExp(r'(?:pages?\s+)?(\w+)\s+(?:through|to|thru)\s+(\w+)'),  // "pages 1 to 5", "1 through 5"
+      RegExp(r'(?:pages?\s+)?(\d+)\s*[-–]\s*(\d+)'),  // "1-5"
     ];
 
     for (final pattern in rangePatterns) {
