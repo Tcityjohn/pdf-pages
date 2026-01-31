@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// Voice command types for the PDF Pages app
@@ -160,6 +161,11 @@ class SpeechService {
   }) {
     final normalizedText = text.toLowerCase().trim();
 
+    // Debug logging to help diagnose speech recognition issues
+    debugPrint('[VoiceParser] Raw input: "$text"');
+    debugPrint('[VoiceParser] Normalized: "$normalizedText"');
+    debugPrint('[VoiceParser] Context: $context, pageCount: $pageCount');
+
     // === Flow control commands (both contexts) ===
     if (_matchesAny(normalizedText, ['cancel', 'stop', 'nevermind', 'never mind'])) {
       return const VoiceCommandResult(type: VoiceCommandType.cancel);
@@ -231,13 +237,17 @@ class SpeechService {
     final saveAsMatch = RegExp(
       r'(?:save\s+as|extract\s+(?:and\s+)?(?:rename|name)|name\s+it|call\s+it)\s+(.+)',
     ).firstMatch(normalizedText);
+    debugPrint('[VoiceParser] saveAsMatch: ${saveAsMatch != null ? "matched, group1=${saveAsMatch.group(1)}" : "no match"}');
     if (saveAsMatch != null) {
       var customName = saveAsMatch.group(1)?.trim();
+      debugPrint('[VoiceParser] customName before strip: "$customName"');
       // Remove trailing "pdf" if present (user might say "save as purple pdf")
       if (customName != null && customName.toLowerCase().endsWith(' pdf')) {
         customName = customName.substring(0, customName.length - 4).trim();
       }
+      debugPrint('[VoiceParser] customName after strip: "$customName"');
       if (customName != null && customName.isNotEmpty) {
+        debugPrint('[VoiceParser] Returning extractWithName with name: "$customName"');
         return VoiceCommandResult(
           type: VoiceCommandType.extractWithName,
           customName: customName,
@@ -247,13 +257,17 @@ class SpeechService {
 
     // "extract pages X, Y, Z" - select those pages AND extract
     final extractPagesMatch = RegExp(r'^extract\s+(?:pages?\s+)?(.+)$').firstMatch(normalizedText);
+    debugPrint('[VoiceParser] extractPagesMatch: ${extractPagesMatch != null ? "matched, group1=${extractPagesMatch.group(1)}" : "no match"}');
     if (extractPagesMatch != null) {
       final pagesText = extractPagesMatch.group(1)!;
+      debugPrint('[VoiceParser] pagesText: "$pagesText"');
       // Don't match if it's just "extract pages" with no numbers
       if (pagesText != 'pages' && pagesText.isNotEmpty) {
         final pages = _parsePageSelection(pagesText, pageCount);
+        debugPrint('[VoiceParser] Parsed pages from extractPagesMatch: $pages');
         if (pages != null && pages.isNotEmpty) {
           // Return selectPages - the handler can then auto-extract after selection
+          debugPrint('[VoiceParser] Returning selectPages with: $pages');
           return VoiceCommandResult(type: VoiceCommandType.selectPages, pages: pages);
         }
       }
@@ -307,11 +321,15 @@ class SpeechService {
     }
 
     // === Page selection patterns ===
+    debugPrint('[VoiceParser] Trying general page selection for: "$normalizedText"');
     final pages = _parsePageSelection(normalizedText, pageCount);
+    debugPrint('[VoiceParser] General page selection result: $pages');
     if (pages != null && pages.isNotEmpty) {
+      debugPrint('[VoiceParser] Returning selectPages with: $pages');
       return VoiceCommandResult(type: VoiceCommandType.selectPages, pages: pages);
     }
 
+    debugPrint('[VoiceParser] No match found, returning unrecognized');
     return const VoiceCommandResult(type: VoiceCommandType.unrecognized);
   }
 
