@@ -38,8 +38,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _openPrivacyPolicy() async {
-    // TODO: Replace with actual privacy policy URL
-    final url = Uri.parse('https://example.com/privacy');
+    final url = Uri.parse('https://tcityjohn.github.io/pdf-pages/privacy');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }
