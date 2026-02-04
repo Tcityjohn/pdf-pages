@@ -1,28 +1,3 @@
-#!/bin/bash
-
-# Export App Store screenshots using Chrome headless
-# Target: 6.7" iPhone (1290x2796 pixels)
-# Source: iPhone 15 screenshots (1179x2556) - scaled to fit within device frame
-
-SCREENSHOTS_DIR="/Users/johncarter/Documents/GitHub/pdf-pages/screenshots"
-CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-
-# Array of mockup data: filename|headline|subheadline|source_image
-declare -a MOCKUPS=(
-    "01_final|Extract Any<br>Pages|From any PDF, in seconds|01_home.png"
-    "02_final|Visual Page<br>Grid|See every page at a glance|02_grid.png"
-    "03_final|Tap or<br>Say It|Select pages by touch or voice|03_selected.png"
-    "04_final|100%<br>Private|Files never leave your device|04_picker.png"
-    "05_final|Your Way,<br>Your Rules|Customize your experience|05_settings.png"
-    "06_final|Go<br>Unlimited|Premium extractions for less|06_premium.png"
-)
-
-for mockup in "${MOCKUPS[@]}"; do
-    IFS='|' read -r filename headline subheadline source_img <<< "$mockup"
-
-    echo "Generating $filename..."
-
-    cat > "$SCREENSHOTS_DIR/${filename}.html" << HTMLEOF
 <!DOCTYPE html>
 <html>
 <head>
@@ -121,31 +96,14 @@ for mockup in "${MOCKUPS[@]}"; do
 <body>
     <div class="mockup">
         <div class="text-banner">
-            <h2 class="headline">${headline}</h2>
-            <p class="subheadline">${subheadline}</p>
+            <h2 class="headline">Go<br>Unlimited</h2>
+            <p class="subheadline">Premium extractions for less</p>
         </div>
         <div class="screenshot-container">
             <div class="screenshot-frame">
-                <img src="file://${SCREENSHOTS_DIR}/${source_img}" alt="Screenshot">
+                <img src="file:///Users/johncarter/Documents/GitHub/pdf-pages/screenshots/06_premium.png" alt="Screenshot">
             </div>
         </div>
     </div>
 </body>
 </html>
-HTMLEOF
-
-    "$CHROME" \
-        --headless \
-        --disable-gpu \
-        --screenshot="$SCREENSHOTS_DIR/${filename}.png" \
-        --window-size=1290,2796 \
-        --hide-scrollbars \
-        "file://$SCREENSHOTS_DIR/${filename}.html" \
-        2>/dev/null
-
-    echo "  -> ${filename}.png created"
-done
-
-echo ""
-echo "Done! Final iPhone screenshots:"
-ls -la "$SCREENSHOTS_DIR"/*_final.png

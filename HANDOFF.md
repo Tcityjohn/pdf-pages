@@ -1,8 +1,8 @@
-# PDF Pages Handoff - 2026-01-29
+# PDF Pages Handoff - 2026-02-04
 
 ## Current State
 
-App is **code-complete** for all PRD stories. Now finishing **App Store Connect metadata** before submitting build.
+App has been **submitted for App Store review**. All code, screenshots, and metadata are complete.
 
 ### What's Done
 
@@ -17,27 +17,23 @@ App is **code-complete** for all PRD stories. Now finishing **App Store Connect 
 | App Store Connect - Subscription | ✅ Complete | `premium_annual`, $9.99/year |
 | App Store Connect - Age Rating | ✅ Complete | 4+ rating |
 | AppFactory dashboard | ✅ Complete | PostHog + RevenueCat keys added |
+| Privacy Policy | ✅ Complete | `https://tcityjohn.github.io/pdf-pages/privacy` |
+| App Store Screenshots | ✅ Complete | 6 iPhone (6.7") + 3 iPad (12.9") |
+| App Store submission | ✅ Submitted | In review as of 2026-02-04 |
 
-### What's Left (App Store Connect)
+### Screenshots
 
-User is currently IN App Store Connect. Complete these sections:
+6 iPhone screenshots in `screenshots/`:
+1. `01_final.png` — "Extract Any Pages"
+2. `02_final.png` — "Visual Page Grid"
+3. `03_final.png` — "Tap or Say It"
+4. `04_final.png` — "100% Private"
+5. `05_final.png` — "Your Way, Your Rules" (Settings)
+6. `06_final.png` — "Go Unlimited" (Paywall)
 
-1. **App Privacy**
-   - Privacy Policy URL (required - user needs to provide or create)
-   - Data Collection questionnaire
+3 iPad screenshots: `ipad_01_final.png` through `ipad_03_final.png`
 
-2. **Version Information**
-   - Screenshots (need to capture from Simulator)
-   - App Description
-   - Keywords
-   - Support URL
-   - What's New text
-
-3. **Review Information**
-   - Contact info for App Review
-   - Notes for reviewer
-
-4. **Build Upload** (after metadata complete)
+All generated via `export-screenshots.sh` / `export-ipad.sh` (Chrome headless + HTML mockups).
 
 ---
 
@@ -60,7 +56,6 @@ User is currently IN App Store Connect. Complete these sections:
 | RevenueCat project connected to App Store Connect | Purchases won't validate - check In-App Purchase key in RevenueCat settings |
 | Entitlement ID is exactly `premium` | Code won't recognize premium users - check `purchase_service.dart:7` |
 | Product ID is exactly `premium_annual` | RevenueCat won't find the product - verify in RevenueCat Products section |
-| User has Apple Developer account with signing | Build upload will fail - not a code issue |
 
 ---
 
@@ -90,7 +85,7 @@ User is currently IN App Store Connect. Complete these sections:
 | `lib/core/services/purchase_service.dart` | RevenueCat integration, API key on line 5 |
 | `lib/core/services/analytics_service.dart` | PostHog integration, API key on line 5 |
 | `lib/features/extractor/presentation/widgets/paywall_sheet.dart` | Paywall UI |
-| `lib/features/settings/presentation/screens/settings_screen.dart` | Settings screen |
+| `lib/features/settings/presentation/screens/settings_screen.dart` | Settings screen, privacy URL on line 41 |
 | `lib/main.dart` | App entry, PDF error dialog, settings navigation |
 
 ---
@@ -111,16 +106,12 @@ Note: `REVENUECAT_PDF_PAGES_PROJECT_ID` still needs to be added (find in Revenue
 
 ## Next Session: Start Here
 
-1. **Continue App Store Connect metadata** - user was in the middle of this
-2. Ask: "Where did you leave off in App Store Connect? Privacy, Screenshots, or Description?"
-3. Once metadata complete → bump version to build 7, archive, upload
-4. Follow user's commit-before-upload protocol: commit, tag `build-7`, push, then upload
+1. **Check App Store review status** — app was submitted 2026-02-04
+2. If rejected: read rejection notes, fix, resubmit
+3. If approved: verify app is live, test purchase flow with sandbox account, confirm PostHog events flowing
 
 ---
 
 ## Confidence Level
 
-**Mechanical from here** - no design decisions remain. All code is complete and tested. Remaining work is:
-- App Store Connect form-filling (user input needed for URLs, descriptions)
-- Screenshot capture (run app in Simulator)
-- Build upload (standard `flutter build ipa` + `xcrun altool`)
+**Done.** App is submitted. Only remaining action is responding to App Review if they flag anything.
