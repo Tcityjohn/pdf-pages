@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/widgets/shared_ui.dart';
 import '../../../../core/services/purchase_service.dart';
 import '../../../../core/services/analytics_service.dart';
@@ -258,6 +259,53 @@ class _PaywallSheetState extends State<PaywallSheet> {
                         ),
                       ),
               ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Legal links (required by App Store guideline 3.1.2)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: () => launchUrl(
+                    Uri.parse('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  child: Text(
+                    'Terms of Use',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    '|',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => launchUrl(
+                    Uri.parse('https://tcityjohn.github.io/pdf-pages/privacy'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  child: Text(
+                    'Privacy Policy',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 8),
