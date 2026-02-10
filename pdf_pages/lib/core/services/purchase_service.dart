@@ -1,5 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+
+/// Result of a purchase attempt
+enum PurchaseResult { success, cancelled, error, unavailable }
 
 /// Service for managing premium subscriptions via RevenueCat
 class PurchaseService {
@@ -13,20 +17,24 @@ class PurchaseService {
   static Future<void> initialize() async {
     if (_initialized) return;
 
-    await Purchases.setLogLevel(LogLevel.debug);
+    try {
+      await Purchases.setLogLevel(LogLevel.debug);
 
-    PurchasesConfiguration configuration = PurchasesConfiguration(_apiKey);
-    await Purchases.configure(configuration);
+      PurchasesConfiguration configuration = PurchasesConfiguration(_apiKey);
+      await Purchases.configure(configuration);
 
-    _initialized = true;
+      _initialized = true;
 
-    // Check initial premium status
-    await _updatePremiumStatus();
+      // Check initial premium status
+      await _updatePremiumStatus();
 
-    // Listen for changes
-    Purchases.addCustomerInfoUpdateListener((customerInfo) {
-      _checkEntitlement(customerInfo);
-    });
+      // Listen for changes
+      Purchases.addCustomerInfoUpdateListener((customerInfo) {
+        _checkEntitlement(customerInfo);
+      });
+    } catch (e) {
+      debugPrint('RevenueCat initialization error: $e');
+    }
   }
 
   /// Update premium status from current customer info
@@ -88,25 +96,38 @@ class PurchaseService {
   }
 
   /// Purchase premium subscription
-  static Future<bool> purchasePremium() async {
+  static Future<PurchaseResult> purchasePremium() async {
     try {
+      // Check if device can make purchases
+      final canPurchase = await canMakePurchases();
+      if (!canPurchase) {
+        debugPrint('Device cannot make purchases');
+        return PurchaseResult.unavailable;
+      }
+
       final package = await getAnnualPackage();
       if (package == null) {
         debugPrint('No annual package available');
-        return false;
+        return PurchaseResult.unavailable;
       }
 
       final result = await Purchases.purchase(PurchaseParams.package(package));
       final customerInfo = result.customerInfo;
       final isPremium = customerInfo.entitlements.all[_entitlementId]?.isActive ?? false;
       isPremiumNotifier.value = isPremium;
-      return isPremium;
-    } on PurchasesErrorCode catch (e) {
-      debugPrint('Purchase error: $e');
-      return false;
+      return isPremium ? PurchaseResult.success : PurchaseResult.error;
+    } on PlatformException catch (e) {
+      // RevenueCat throws PlatformException; error code 1 = user cancelled
+      final errorCode = PurchasesErrorHelper.getErrorCode(e);
+      if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
+        debugPrint('Purchase cancelled by user');
+        return PurchaseResult.cancelled;
+      }
+      debugPrint('Purchase error: $errorCode - ${e.message}');
+      return PurchaseResult.error;
     } catch (e) {
       debugPrint('Purchase error: $e');
-      return false;
+      return PurchaseResult.error;
     }
   }
 
