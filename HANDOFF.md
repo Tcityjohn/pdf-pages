@@ -1,117 +1,101 @@
-# PDF Pages Handoff - 2026-02-04
+# Handoff — Voice PDF Extractor
 
-## Current State
-
-App has been **submitted for App Store review**. All code, screenshots, and metadata are complete.
-
-### What's Done
-
-| Component | Status | Notes |
-|-----------|--------|-------|
-| Core app functionality | ✅ Complete | PDF loading, page selection, extraction, export |
-| PostHog analytics | ✅ Complete | Key: `phc_CN2G4I039vFq7xwvumAc0TEzQhg8MdaqG5sWeqjIPBi` |
-| RevenueCat SDK | ✅ Complete | Key: `appl_MtWeucoFhDIikFoUCfHMLPuaFId` |
-| Paywall UI | ✅ Complete | Shows when 3 free extractions exhausted |
-| Settings screen | ✅ Complete | Premium status, restore, legal links |
-| Encrypted PDF handling | ✅ Complete | Error dialog with "Try Another" option |
-| App Store Connect - Subscription | ✅ Complete | `premium_annual`, $9.99/year |
-| App Store Connect - Age Rating | ✅ Complete | 4+ rating |
-| AppFactory dashboard | ✅ Complete | PostHog + RevenueCat keys added |
-| Privacy Policy | ✅ Complete | `https://tcityjohn.github.io/pdf-pages/privacy` |
-| App Store Screenshots | ✅ Complete | 6 iPhone (6.7") + 3 iPad (12.9") |
-| App Store submission | ✅ Submitted | In review as of 2026-02-04 |
-
-### Screenshots
-
-6 iPhone screenshots in `screenshots/`:
-1. `01_final.png` — "Extract Any Pages"
-2. `02_final.png` — "Visual Page Grid"
-3. `03_final.png` — "Tap or Say It"
-4. `04_final.png` — "100% Private"
-5. `05_final.png` — "Your Way, Your Rules" (Settings)
-6. `06_final.png` — "Go Unlimited" (Paywall)
-
-3 iPad screenshots: `ipad_01_final.png` through `ipad_03_final.png`
-
-All generated via `export-screenshots.sh` / `export-ipad.sh` (Chrome headless + HTML mockups).
+**Date:** 2026-02-10 — 10:30 AM
+**Branch:** `master` (pushed)
+**Build:** 1.0.0+18 (uploaded to ASC, VALID, NOT yet on TestFlight for John's iPad)
+**Analyze:** Clean — `flutter analyze` 0 issues
+**Path:** `~/Documents/GitHub/pdf-pages/pdf_pages`
 
 ---
 
-## Decisions Made
+## What Happened This Session
 
-| Decision | Why | Alternative Rejected |
-|----------|-----|---------------------|
-| PostHog for analytics | Required per CLAUDE.md for all apps | N/A - mandatory |
-| RevenueCat for IAP | User's standard stack, handles receipt validation | Native StoreKit - more complex |
-| $9.99/year pricing | Defined in PRD | N/A |
-| Account-level shared secret | User already has this set up across apps | App-specific secret |
-| Bundle ID `com.pdfpages1.app` | User confirmed this is the final ID | N/A |
+App was rejected (Feb 10 review) for two issues, both on the paywall/upgrade screen on iPad Air 11-inch M3:
 
----
+1. **Guideline 2.1 (IAP error):** Tapping "Upgrade Now" showed an error. Root cause: wrong exception type caught (`PurchasesErrorCode` enum instead of `PlatformException`), no cancellation detection, no `canMakePurchases()` check.
 
-## Assumptions
+2. **Guideline 4.0 (iPad layout):** Paywall UI was clipped — buttons and legal links hidden. Root cause: non-scrollable `Column` in bottom sheet, no iPad width constraint.
 
-| Assumption | What Breaks If Wrong |
-|------------|----------------------|
-| RevenueCat project connected to App Store Connect | Purchases won't validate - check In-App Purchase key in RevenueCat settings |
-| Entitlement ID is exactly `premium` | Code won't recognize premium users - check `purchase_service.dart:7` |
-| Product ID is exactly `premium_annual` | RevenueCat won't find the product - verify in RevenueCat Products section |
+### Code Fixes (committed, build 18 uploaded)
 
----
+**`lib/core/services/purchase_service.dart`:**
+- Added `PurchaseResult` enum: `success`, `cancelled`, `error`, `unavailable`
+- `purchasePremium()` returns `PurchaseResult` instead of `bool`
+- Catches `PlatformException` + uses `PurchasesErrorHelper.getErrorCode()` to detect cancellation
+- Calls `canMakePurchases()` before attempting purchase
+- Returns `unavailable` if annual package is null
+- Wrapped `initialize()` in try/catch
 
-## Trouble Spots
+**`lib/features/extractor/presentation/widgets/paywall_sheet.dart`:**
+- Wrapped Column in `SingleChildScrollView` (content scrolls when exceeding available height)
+- Added `ConstrainedBox(maxWidth: 500)` wrapped in `Center` (prevents full-width stretch on iPad)
+- Purchase handler uses `switch` on `PurchaseResult` — cancellation = no error message, unavailable/error get specific messages
 
-### If RevenueCat purchases don't work:
-1. Check RevenueCat dashboard → Project Settings → App Store Connect API (is the P8 key uploaded?)
-2. Check Products → verify `premium_annual` exists and is attached to `premium` entitlement
-3. Check the shared secret is configured
-4. In sandbox, use a sandbox tester account (Settings → Sandbox in App Store Connect)
+### ASC Metadata Fixes (applied via API)
+- Description: removed leading spaces and trailing whitespace
+- Subtitle: `speak to extract and save` -> `Speak to Extract and Save`
+- Copyright: `2026 John Carter` -> `© 2026 John Carter` (John did manually)
+- Review notes: updated to explain both fixes
 
-### If PostHog events don't appear:
-1. Events may take a few minutes to show in dashboard
-2. Verify API key in `analytics_service.dart:5`
-3. Check PostHog project is set to US region (host is `us.i.posthog.com`)
-
-### If app crashes on PDF load:
-1. Encrypted PDFs should show dialog - if crash, check `pdf_service.dart:42-48` exception handling
-2. Memory issues with large PDFs - thumbnails are 150px, should be fine
+### NOT Done
+- **Have not verified the fix on a physical iPad** — John wants to see it before resubmitting
+- **Have not resubmitted** — API hit a conflicting submission state; needs to be done via ASC web UI after iPad verification
+- There is a dangling empty reviewSubmission (`bf4e25db`) in READY_FOR_REVIEW state — should resolve itself when submitting through the web UI
 
 ---
 
-## Key Files
+## What's Fighting Us
 
-| File | Purpose |
-|------|---------|
-| `lib/core/services/purchase_service.dart` | RevenueCat integration, API key on line 5 |
-| `lib/core/services/analytics_service.dart` | PostHog integration, API key on line 5 |
-| `lib/features/extractor/presentation/widgets/paywall_sheet.dart` | Paywall UI |
-| `lib/features/settings/presentation/screens/settings_screen.dart` | Settings screen, privacy URL on line 41 |
-| `lib/main.dart` | App entry, PDF error dialog, settings navigation |
-
----
-
-## AppFactory Dashboard
-
-Added to `~/AppFactory/dashboard/.env.local`:
-```
-POSTHOG_PDF_PAGES_KEY=phx_gTS38on1YWbc5MZ4EiZza5Sak1EMwS42NownCq9hlN3tVIH
-REVENUECAT_PDF_PAGES_KEY=sk_CmzMgUVWcczQYWEDESjFoMnTBltsA
-APP_PDF_PAGES_BUNDLE_ID=com.pdfpages1.app
-APP_PDF_PAGES_REVENUECAT_KEY=sk_CmzMgUVWcczQYWEDESjFoMnTBltsA
-```
-
-Note: `REVENUECAT_PDF_PAGES_PROJECT_ID` still needs to be added (find in RevenueCat URL).
+- ASC API can't resubmit after rejection when there are conflicting `reviewSubmission` objects. Use the web UI for resubmission.
+- **Do NOT use iOS Simulator** — John's rule. Always TestFlight to physical device.
 
 ---
 
 ## Next Session: Start Here
 
-1. **Check App Store review status** — app was submitted 2026-02-04
-2. If rejected: read rejection notes, fix, resubmit
-3. If approved: verify app is live, test purchase flow with sandbox account, confirm PostHog events flowing
+**Goal:** Get build 18 onto John's iPad, verify the paywall fixes, then resubmit.
+
+1. Build 18 is already uploaded and VALID in ASC. Check if it's showing in TestFlight — John should be able to install it.
+2. Walk John through testing on his iPad (see verification checklist below).
+3. If the paywall looks good, John submits via ASC web UI (or next session tries API again).
+
+### iPad Verification Checklist
+
+Ask John to take screenshots of each and share them so you can verify:
+
+- [ ] **Open the paywall** (use up 3 free extractions, or go to Settings > tap upgrade) — can you see ALL content? Scroll down if needed. Specifically: Upgrade Now button, Restore Purchases button, Terms of Use / Privacy Policy links, and "Free extractions reset in X days" text must ALL be visible.
+- [ ] **Check width** — the paywall should NOT stretch edge-to-edge on iPad. It should be centered with reasonable width (~500px max).
+- [ ] **Tap "Upgrade Now" then cancel** the StoreKit dialog — should return to the paywall with NO error message (no snackbar).
+- [ ] **Tap "Upgrade Now" and complete** sandbox purchase — should dismiss the paywall and unlock premium.
+- [ ] **General layout** — does the rest of the app look reasonable on iPad? (Page grid, toolbar, export sheet)
 
 ---
 
-## Confidence Level
+## Key Files
 
-**Done.** App is submitted. Only remaining action is responding to App Review if they flag anything.
+| File | What Changed |
+|------|-------------|
+| `lib/core/services/purchase_service.dart` | IAP error handling, PurchaseResult enum |
+| `lib/features/extractor/presentation/widgets/paywall_sheet.dart` | ScrollView + iPad width constraint |
+| `pubspec.yaml` | Version bump 17 -> 18 |
+
+---
+
+## Continuity
+
+Session count: 1 (fresh investigation of rejection)
+
+---
+
+## Self-Eval
+
+| Criterion | Score | Note |
+|-----------|-------|------|
+| Symptom described | 2/2 | Both rejection reasons documented with root causes |
+| Files + lines | 2/2 | All changed files listed with specific changes |
+| Trouble spots | 2/2 | ASC submission conflict + simulator rule documented |
+| What's next | 2/2 | Clear checklist with physical device verification |
+| Honest about gaps | 2/2 | Clearly states fix is NOT verified on iPad yet |
+| No fluff | 1/2 | Could be tighter |
+| Actionable | 2/2 | Next session can execute immediately |
+| **Total** | **13/14** | |
