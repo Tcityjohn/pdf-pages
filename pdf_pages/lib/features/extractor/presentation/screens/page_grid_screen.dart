@@ -74,6 +74,7 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
     _scrollController = ScrollController();
     // Start loading thumbnails progressively
     _loadThumbnailsProgressively();
+    AnalyticsService.trackScreenViewed('page_grid');
   }
 
   @override
@@ -221,6 +222,10 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isExtracting = false);
+        AnalyticsService.trackErrorDisplayed(
+          errorType: 'extraction_error',
+          context: 'page_grid',
+        );
         // Show error dialog
         showDialog<void>(
           context: context,
@@ -264,6 +269,7 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
 
   /// Show the export bottom sheet after successful extraction
   Future<void> _showExportSheet(String extractedFilePath) async {
+    AnalyticsService.trackScreenViewed('export');
     final selectedPages = ref.read(selectedPagesProvider);
     await showModalBottomSheet<void>(
       context: context,
@@ -315,6 +321,9 @@ class _PageGridScreenState extends ConsumerState<PageGridScreen> {
     setState(() {
       _showVoiceInput = !_showVoiceInput;
     });
+    if (_showVoiceInput) {
+      AnalyticsService.trackButtonTapped(buttonId: 'voice_input', screenName: 'page_grid');
+    }
   }
 
   /// Scroll to a specific page in the grid

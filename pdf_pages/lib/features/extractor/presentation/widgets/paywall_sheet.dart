@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:purchases_flutter/purchases_flutter.dart' show Package;
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/widgets/shared_ui.dart';
 import '../../../../core/services/purchase_service.dart';
@@ -21,29 +22,49 @@ class PaywallSheet extends StatefulWidget {
   State<PaywallSheet> createState() => _PaywallSheetState();
 }
 
+enum _PlanType { annual, lifetime }
+
 class _PaywallSheetState extends State<PaywallSheet> {
   bool _isLoading = false;
   bool _isRestoring = false;
-  String _priceString = '\$9.99/year';
+  _PlanType _selectedPlan = _PlanType.annual;
+  String _annualPrice = '\$4.99';
+  String _lifetimePrice = '\$9.99';
+  Package? _annualPackage;
+  Package? _lifetimePackage;
 
   @override
   void initState() {
     super.initState();
-    _loadPrice();
+    _loadPrices();
+    AnalyticsService.trackScreenViewed('paywall');
   }
 
-  Future<void> _loadPrice() async {
-    final price = await PurchaseService.getPriceString();
+  Future<void> _loadPrices() async {
+    final annualPrice = await PurchaseService.getAnnualPriceString();
+    final lifetimePrice = await PurchaseService.getLifetimePriceString();
+    final annualPkg = await PurchaseService.getAnnualPackage();
+    final lifetimePkg = await PurchaseService.getLifetimePackage();
     if (mounted) {
-      setState(() => _priceString = price);
+      setState(() {
+        _annualPrice = annualPrice;
+        _lifetimePrice = lifetimePrice;
+        _annualPackage = annualPkg;
+        _lifetimePackage = lifetimePkg;
+      });
     }
   }
 
   Future<void> _handlePurchase() async {
+    final package = _selectedPlan == _PlanType.annual
+        ? _annualPackage
+        : _lifetimePackage;
+    if (package == null) return;
+
     setState(() => _isLoading = true);
     AnalyticsService.trackPurchaseInitiated();
 
-    final result = await PurchaseService.purchasePremium();
+    final result = await PurchaseService.purchasePackage(package);
 
     if (mounted) {
       setState(() => _isLoading = false);
@@ -192,21 +213,31 @@ class _PaywallSheetState extends State<PaywallSheet> {
 
                   const SizedBox(height: 24),
 
-                  // Price section
-                  Text(
-                    _priceString.replaceAll('/year', ''),
-                    style: const TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  Text(
-                    'per year',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
+                  // Plan selection
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _PlanOption(
+                          label: 'Annual',
+                          price: _annualPrice,
+                          detail: 'per year',
+                          trial: '7-day free trial',
+                          selected: _selectedPlan == _PlanType.annual,
+                          onTap: () => setState(() => _selectedPlan = _PlanType.annual),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _PlanOption(
+                          label: 'Lifetime',
+                          price: _lifetimePrice,
+                          detail: 'one-time',
+                          trial: 'Best value',
+                          selected: _selectedPlan == _PlanType.lifetime,
+                          onTap: () => setState(() => _selectedPlan = _PlanType.lifetime),
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 24),
@@ -233,9 +264,11 @@ class _PaywallSheetState extends State<PaywallSheet> {
                                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
-                          : const Text(
-                              'Upgrade Now',
-                              style: TextStyle(
+                          : Text(
+                              _selectedPlan == _PlanType.annual
+                                  ? 'Start Free Trial'
+                                  : 'Buy Lifetime Access',
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -370,6 +403,88 @@ class _FeatureRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _PlanOption extends StatelessWidget {
+  final String label;
+  final String price;
+  final String detail;
+  final String trial;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _PlanOption({
+    required this.label,
+    required this.price,
+    required this.detail,
+    required this.trial,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primaryPale : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selected ? AppColors.primary : const Color(0xFFDDDDDD),
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: selected ? AppColors.primary : AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              price,
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                color: selected ? AppColors.primary : AppColors.textPrimary,
+              ),
+            ),
+            Text(
+              detail,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: selected
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : const Color(0xFFEEEEEE),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                trial,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? AppColors.primary : AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

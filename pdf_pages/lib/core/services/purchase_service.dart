@@ -82,8 +82,19 @@ class PurchaseService {
     }
   }
 
-  /// Get price string for display
-  static Future<String> getPriceString() async {
+  /// Get the lifetime package specifically
+  static Future<Package?> getLifetimePackage() async {
+    try {
+      final offerings = await Purchases.getOfferings();
+      return offerings.current?.lifetime;
+    } catch (e) {
+      debugPrint('Error getting lifetime package: $e');
+      return null;
+    }
+  }
+
+  /// Get price string for annual display
+  static Future<String> getAnnualPriceString() async {
     try {
       final package = await getAnnualPackage();
       if (package != null) {
@@ -92,22 +103,28 @@ class PurchaseService {
     } catch (e) {
       debugPrint('Error getting price: $e');
     }
-    return '\$9.99/year'; // Fallback
+    return '\$4.99'; // Fallback
   }
 
-  /// Purchase premium subscription
-  static Future<PurchaseResult> purchasePremium() async {
+  /// Get price string for lifetime display
+  static Future<String> getLifetimePriceString() async {
     try {
-      // Check if device can make purchases
+      final package = await getLifetimePackage();
+      if (package != null) {
+        return package.storeProduct.priceString;
+      }
+    } catch (e) {
+      debugPrint('Error getting lifetime price: $e');
+    }
+    return '\$9.99'; // Fallback
+  }
+
+  /// Purchase premium (annual or lifetime)
+  static Future<PurchaseResult> purchasePackage(Package package) async {
+    try {
       final canPurchase = await canMakePurchases();
       if (!canPurchase) {
         debugPrint('Device cannot make purchases');
-        return PurchaseResult.unavailable;
-      }
-
-      final package = await getAnnualPackage();
-      if (package == null) {
-        debugPrint('No annual package available');
         return PurchaseResult.unavailable;
       }
 
@@ -117,7 +134,6 @@ class PurchaseService {
       isPremiumNotifier.value = isPremium;
       return isPremium ? PurchaseResult.success : PurchaseResult.error;
     } on PlatformException catch (e) {
-      // RevenueCat throws PlatformException; error code 1 = user cancelled
       final errorCode = PurchasesErrorHelper.getErrorCode(e);
       if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
         debugPrint('Purchase cancelled by user');

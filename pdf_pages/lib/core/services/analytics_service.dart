@@ -1,147 +1,302 @@
-import 'package:posthog_flutter/posthog_flutter.dart';
+import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Analytics service wrapping PostHog for event tracking
+/// Analytics service that sends events to Supabase analytics_events table.
+/// Silently fails on all errors — analytics never crashes the app.
 class AnalyticsService {
-  static const String _apiKey = 'phc_CN2G4I039vFq7xwvumAc0TEzQhg8MdaqG5sWeqjIPBi';
-  static const String _host = 'https://us.i.posthog.com';
+  static const String _appId = 'voice-pdf-extractor';
+  static const int _batchSize = 10;
+  static const Duration _flushInterval = Duration(seconds: 30);
 
   static bool _initialized = false;
+  static String _sessionId = '';
+  static String _deviceType = '';
+  static String _osVersion = '';
+  static String _appVersion = '';
+  static String _currentScreen = 'home';
+  static String _previousScreen = '';
+  static DateTime _sessionStart = DateTime.now();
 
-  /// Initialize PostHog SDK - call once at app startup
+  static final List<Map<String, dynamic>> _eventQueue = [];
+  static Timer? _flushTimer;
+
+  /// Initialize analytics — call once at app startup
   static Future<void> initialize() async {
     if (_initialized) return;
 
-    final config = PostHogConfig(_apiKey);
-    config.host = _host;
-    config.captureApplicationLifecycleEvents = true;
-    config.debug = false;
-
-    await Posthog().setup(config);
-    _initialized = true;
+    try {
+      _sessionId = _generateUuid();
+      _sessionStart = DateTime.now();
+      await _loadDeviceInfo();
+      _startFlushTimer();
+      _initialized = true;
+    } catch (e) {
+      debugPrint('Analytics init error: $e');
+    }
   }
 
-  /// Track when a PDF is opened
-  static Future<void> trackPdfOpened({
-    required int pageCount,
-  }) async {
-    await Posthog().capture(
-      eventName: 'pdf_opened',
-      properties: {
-        'page_count': pageCount,
-      },
-    );
+  /// Simple UUID v4 generator (avoids extra dependency)
+  static String _generateUuid() {
+    final random = DateTime.now().microsecondsSinceEpoch;
+    return '${random.toRadixString(16).padLeft(12, '0')}-'
+        '${(random ~/ 1000).toRadixString(16).padLeft(4, '0')}-'
+        '4${(random ~/ 100000).toRadixString(16).padLeft(3, '0')}-'
+        '${(8 + (random % 4)).toRadixString(16)}${(random ~/ 10000000).toRadixString(16).padLeft(3, '0')}-'
+        '${random.toRadixString(16).padLeft(12, '0')}';
   }
 
-  /// Track when pages are selected (called on extraction)
-  static Future<void> trackPagesSelected({
+  static Future<void> _loadDeviceInfo() async {
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      final packageInfo = await PackageInfo.fromPlatform();
+      _appVersion = packageInfo.version;
+
+      if (Platform.isIOS) {
+        final ios = await deviceInfo.iosInfo;
+        _deviceType = ios.utsname.machine;
+        _osVersion = 'iOS ${ios.systemVersion}';
+      } else if (Platform.isAndroid) {
+        final android = await deviceInfo.androidInfo;
+        _deviceType = '${android.manufacturer} ${android.model}';
+        _osVersion = 'Android ${android.version.release}';
+      }
+    } catch (e) {
+      debugPrint('Device info error: $e');
+      _deviceType = 'unknown';
+      _osVersion = 'unknown';
+      _appVersion = '1.0.0';
+    }
+  }
+
+  static void _startFlushTimer() {
+    _flushTimer?.cancel();
+    _flushTimer = Timer.periodic(_flushInterval, (_) => flush());
+  }
+
+  /// Set current screen name for auto-tagging events
+  static void setScreen(String screenName) {
+    _previousScreen = _currentScreen;
+    _currentScreen = screenName;
+  }
+
+  /// Get session duration in seconds
+  static int get sessionDurationSeconds =>
+      DateTime.now().difference(_sessionStart).inSeconds;
+
+  /// Start a new session (e.g., after 30+ min inactive)
+  static void startNewSession() {
+    _sessionId = _generateUuid();
+    _sessionStart = DateTime.now();
+  }
+
+  // ── Core tracking method ──────────────────────────────────────
+
+  /// Track an event. Silently fails on errors.
+  static void trackEvent(String eventName, {Map<String, dynamic>? metadata}) {
+    if (!_initialized) return;
+
+    try {
+      String? userId;
+      try {
+        userId = Supabase.instance.client.auth.currentUser?.id;
+      } catch (_) {}
+
+      final event = {
+        'app_id': _appId,
+        'event_name': eventName,
+        'user_id': userId,
+        'session_id': _sessionId,
+        'device_type': _deviceType,
+        'os_version': _osVersion,
+        'app_version': _appVersion,
+        'screen_name': _currentScreen,
+        'metadata': metadata ?? {},
+      };
+
+      _eventQueue.add(event);
+
+      if (_eventQueue.length >= _batchSize) {
+        flush();
+      }
+    } catch (e) {
+      debugPrint('Analytics trackEvent error: $e');
+    }
+  }
+
+  /// Flush queued events to Supabase
+  static Future<void> flush() async {
+    if (_eventQueue.isEmpty) return;
+
+    final batch = List<Map<String, dynamic>>.from(_eventQueue);
+    _eventQueue.clear();
+
+    try {
+      await Supabase.instance.client
+          .from('analytics_events')
+          .insert(batch);
+    } catch (e) {
+      debugPrint('Analytics flush error: $e');
+      // Don't re-queue on failure — drop silently
+    }
+  }
+
+  /// Dispose — flush remaining events
+  static Future<void> dispose() async {
+    _flushTimer?.cancel();
+    await flush();
+  }
+
+  // ── Convenience methods (preserving existing API) ─────────────
+
+  static void trackPdfOpened({required int pageCount}) {
+    trackEvent('pdf_opened', metadata: {'page_count': pageCount});
+  }
+
+  static void trackPagesSelected({
     required int selectedCount,
     required int totalPages,
-  }) async {
-    await Posthog().capture(
-      eventName: 'pages_selected',
-      properties: {
-        'selected_count': selectedCount,
-        'total_pages': totalPages,
-        'selection_ratio': selectedCount / totalPages,
-      },
-    );
+  }) {
+    trackEvent('pages_selected', metadata: {
+      'selected_count': selectedCount,
+      'total_pages': totalPages,
+      'selection_ratio': totalPages > 0 ? selectedCount / totalPages : 0,
+    });
   }
 
-  /// Track successful extraction
-  static Future<void> trackExtractionCompleted({
-    required int pageCount,
-  }) async {
-    await Posthog().capture(
-      eventName: 'extraction_completed',
-      properties: {
-        'page_count': pageCount,
-      },
-    );
+  static void trackExtractionCompleted({required int pageCount}) {
+    trackEvent('feature_used', metadata: {
+      'feature_name': 'extraction',
+      'page_count': pageCount,
+    });
   }
 
-  /// Track when paywall is shown
-  static Future<void> trackPaywallShown({
-    required String reason,
-  }) async {
-    await Posthog().capture(
-      eventName: 'paywall_shown',
-      properties: {
-        'reason': reason,
-      },
-    );
+  static void trackPaywallShown({required String reason}) {
+    trackEvent('paywall_viewed', metadata: {'source': reason});
   }
 
-  /// Track share action
-  static Future<void> trackShare() async {
-    await Posthog().capture(eventName: 'pdf_shared');
+  static void trackShare() {
+    trackEvent('button_tapped', metadata: {
+      'button_id': 'share_pdf',
+      'screen_name': _currentScreen,
+    });
   }
 
-  /// Track save to files action
-  static Future<void> trackSaveToFiles() async {
-    await Posthog().capture(eventName: 'pdf_saved_to_files');
+  static void trackSaveToFiles() {
+    trackEvent('button_tapped', metadata: {
+      'button_id': 'save_to_files',
+      'screen_name': _currentScreen,
+    });
   }
 
-  /// Track voice input used
-  static Future<void> trackVoiceInputUsed({
-    required int pagesSelected,
-  }) async {
-    await Posthog().capture(
-      eventName: 'voice_input_used',
-      properties: {
-        'pages_selected': pagesSelected,
-      },
-    );
+  static void trackVoiceInputUsed({required int pagesSelected}) {
+    trackEvent('feature_used', metadata: {
+      'feature_name': 'voice_input',
+      'pages_selected': pagesSelected,
+    });
   }
 
-  /// Track range dialog used
-  static Future<void> trackRangeDialogUsed({
-    required int pagesSelected,
-  }) async {
-    await Posthog().capture(
-      eventName: 'range_dialog_used',
-      properties: {
-        'pages_selected': pagesSelected,
-      },
-    );
+  static void trackRangeDialogUsed({required int pagesSelected}) {
+    trackEvent('feature_used', metadata: {
+      'feature_name': 'range_dialog',
+      'pages_selected': pagesSelected,
+    });
   }
 
-  /// Track premium purchase initiated
-  static Future<void> trackPurchaseInitiated() async {
-    await Posthog().capture(eventName: 'purchase_initiated');
+  static void trackPurchaseInitiated() {
+    trackEvent('purchase_started', metadata: {
+      'source': _currentScreen,
+    });
   }
 
-  /// Track premium purchase completed
-  static Future<void> trackPurchaseCompleted() async {
-    await Posthog().capture(eventName: 'purchase_completed');
+  static void trackPurchaseCompleted() {
+    trackEvent('purchase_completed');
   }
 
-  /// Track restore purchases
-  static Future<void> trackRestorePurchases({
-    required bool success,
-  }) async {
-    await Posthog().capture(
-      eventName: 'restore_purchases',
-      properties: {
-        'success': success,
-      },
-    );
+  static void trackRestorePurchases({required bool success}) {
+    trackEvent('feature_used', metadata: {
+      'feature_name': 'restore_purchases',
+      'success': success,
+    });
   }
 
-  /// Identify user (for premium users)
-  static Future<void> identifyUser({
-    required String oddsUserId,
-    bool isPremium = false,
-  }) async {
-    await Posthog().identify(
-      userId: oddsUserId,
-      userProperties: {
-        'is_premium': isPremium,
-      },
-    );
+  static void trackScreenViewed(String screenName) {
+    setScreen(screenName);
+    trackEvent('screen_viewed', metadata: {
+      'screen_name': screenName,
+      'previous_screen': _previousScreen,
+    });
   }
 
-  /// Reset user identity (on logout/reset)
-  static Future<void> reset() async {
-    await Posthog().reset();
+  static void trackErrorDisplayed({
+    required String errorType,
+    required String context,
+  }) {
+    trackEvent('error_displayed', metadata: {
+      'error_type': errorType,
+      'context': context,
+    });
+  }
+
+  static void trackButtonTapped({
+    required String buttonId,
+    String? screenName,
+  }) {
+    trackEvent('button_tapped', metadata: {
+      'button_id': buttonId,
+      'screen_name': screenName ?? _currentScreen,
+    });
+  }
+
+  static void trackFlowStarted(String flowName) {
+    trackEvent('flow_started', metadata: {'flow_name': flowName});
+  }
+
+  static void trackFlowStepCompleted({
+    required String flowName,
+    required int step,
+    required String stepName,
+  }) {
+    trackEvent('flow_step_completed', metadata: {
+      'flow_name': flowName,
+      'step': step,
+      'step_name': stepName,
+    });
+  }
+
+  static void trackFlowCompleted({
+    required String flowName,
+    required int totalDurationSeconds,
+  }) {
+    trackEvent('flow_completed', metadata: {
+      'flow_name': flowName,
+      'total_duration_seconds': totalDurationSeconds,
+    });
+  }
+
+  static void trackFlowAbandoned({
+    required String flowName,
+    required int lastStep,
+    required String stepName,
+  }) {
+    trackEvent('flow_abandoned', metadata: {
+      'flow_name': flowName,
+      'last_step': lastStep,
+      'step_name': stepName,
+    });
+  }
+
+  static void trackSettingChanged({
+    required String settingName,
+    required dynamic value,
+  }) {
+    trackEvent('feature_used', metadata: {
+      'feature_name': 'setting_changed',
+      'setting_name': settingName,
+      'value': value.toString(),
+    });
   }
 }

@@ -16,6 +16,12 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isRestoring = false;
 
+  @override
+  void initState() {
+    super.initState();
+    AnalyticsService.trackScreenViewed('settings');
+  }
+
   Future<void> _restorePurchases() async {
     setState(() => _isRestoring = true);
 

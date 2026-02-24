@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/services/pdf_service.dart';
 import 'core/services/usage_service.dart';
 import 'core/services/analytics_service.dart';
@@ -10,11 +12,36 @@ import 'core/widgets/shared_ui.dart';
 import 'features/extractor/presentation/screens/page_grid_screen.dart';
 import 'features/settings/presentation/screens/settings_screen.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Supabase (for analytics)
+  await Supabase.initialize(
+    url: const String.fromEnvironment(
+      'SUPABASE_URL',
+      defaultValue: 'https://xofisqxcurigrcgegskq.supabase.co',
+    ),
+    anonKey: const String.fromEnvironment(
+      'SUPABASE_ANON_KEY',
+      defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvZmlzcXhjdXJpZ3JjZ2Vnc2txIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2NjUzODYsImV4cCI6MjA4NjI0MTM4Nn0.eATyJ_Vb9N8sKdNuEB9OAx4A9P2wcgUsqvXbe3nDhX0',
+    ),
+  );
+
   await AnalyticsService.initialize();
   await PurchaseService.initialize();
-  runApp(const ProviderScope(child: MyApp()));
+
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = 'https://41aa0c4b901fa8a4b0f705b63203e0c7@o4510670743011328.ingest.us.sentry.io/4510942454022144';
+      options.environment = 'production';
+      options.enableAutoPerformanceTracing = false;
+      options.enableUserInteractionTracing = false;
+      options.tracesSampleRate = 0;
+    },
+    appRunner: () => runApp(
+      const ProviderScope(child: MyApp()),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -50,7 +77,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   final PdfService _pdfService = PdfService();
   final UsageService _usageService = UsageService();
   final RecentsService _recentsService = RecentsService();
@@ -58,11 +85,36 @@ class _HomePageState extends State<HomePage> {
   bool _isPickingFile = false;
   bool _usageServiceInitialized = false;
   int _remainingExtractions = 3;
+  DateTime _lastPaused = DateTime.now();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeServices();
+
+    // Track cold start
+    AnalyticsService.trackEvent('app_opened', metadata: {'source': 'cold_start'});
+    AnalyticsService.trackEvent('session_start');
+    AnalyticsService.trackScreenViewed('home');
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _lastPaused = DateTime.now();
+      AnalyticsService.trackEvent('session_end', metadata: {
+        'duration_seconds': AnalyticsService.sessionDurationSeconds,
+      });
+      AnalyticsService.flush();
+    } else if (state == AppLifecycleState.resumed) {
+      final inactiveMinutes = DateTime.now().difference(_lastPaused).inMinutes;
+      if (inactiveMinutes >= 30) {
+        AnalyticsService.startNewSession();
+        AnalyticsService.trackEvent('session_start');
+      }
+      AnalyticsService.trackEvent('app_opened', metadata: {'source': 'background'});
+    }
   }
 
   Future<void> _initializeServices() async {
@@ -88,6 +140,10 @@ class _HomePageState extends State<HomePage> {
 
   /// Show error dialog for PDF loading errors
   Future<void> _showPdfErrorDialog(String message) async {
+    AnalyticsService.trackErrorDisplayed(
+      errorType: 'pdf_load_error',
+      context: 'home',
+    );
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
@@ -173,6 +229,7 @@ class _HomePageState extends State<HomePage> {
         );
 
         // Refresh usage data when returning from page grid
+        AnalyticsService.trackScreenViewed('home');
         if (_usageServiceInitialized) {
           final remaining = await _usageService.getRemainingExtractions();
           setState(() {
@@ -192,7 +249,9 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pdfService.closeDocument();
+    AnalyticsService.dispose();
     super.dispose();
   }
 
@@ -206,6 +265,7 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.white),
             onPressed: () {
+              AnalyticsService.trackButtonTapped(buttonId: 'settings', screenName: 'home');
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const SettingsScreen(),
@@ -366,7 +426,15 @@ class _HomePageState extends State<HomePage> {
               // Black pill CTA button
               AppButton(
                 label: _isPickingFile ? 'Opening...' : 'Select PDF',
-                onPressed: _isPickingFile ? null : _pickPdfFile,
+                onPressed: _isPickingFile
+                    ? null
+                    : () {
+                        AnalyticsService.trackButtonTapped(
+                          buttonId: 'select_pdf',
+                          screenName: 'home',
+                        );
+                        _pickPdfFile();
+                      },
                 isLoading: _isPickingFile,
               ),
 

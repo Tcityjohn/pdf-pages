@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/pdf_service.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../../../../core/widgets/shared_ui.dart';
 import '../../../providers/page_order_provider.dart';
 
@@ -32,6 +33,11 @@ class _ReorderScreenState extends ConsumerState<ReorderScreen> {
       ref.read(pageOrderProvider.notifier).setCustomOrder(widget.initialOrder);
     });
     _loadThumbnails();
+    AnalyticsService.trackScreenViewed('reorder');
+    AnalyticsService.trackEvent('feature_used', metadata: {
+      'feature_name': 'reorder',
+      'page_count': widget.initialOrder.length,
+    });
   }
 
   Future<void> _loadThumbnails() async {
