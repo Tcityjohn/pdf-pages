@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -39,14 +40,15 @@ class AnalyticsService {
     }
   }
 
-  /// Simple UUID v4 generator (avoids extra dependency)
+  /// UUID v4 generator (avoids extra dependency)
   static String _generateUuid() {
-    final random = DateTime.now().microsecondsSinceEpoch;
-    return '${random.toRadixString(16).padLeft(12, '0')}-'
-        '${(random ~/ 1000).toRadixString(16).padLeft(4, '0')}-'
-        '4${(random ~/ 100000).toRadixString(16).padLeft(3, '0')}-'
-        '${(8 + (random % 4)).toRadixString(16)}${(random ~/ 10000000).toRadixString(16).padLeft(3, '0')}-'
-        '${random.toRadixString(16).padLeft(12, '0')}';
+    final rng = Random();
+    final bytes = List<int>.generate(16, (_) => rng.nextInt(256));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+    bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 1
+    final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+        '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
   }
 
   static Future<void> _loadDeviceInfo() async {
