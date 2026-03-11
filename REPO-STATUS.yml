@@ -1,0 +1,106 @@
+# REPO-STATUS.yml — Machine-managed task sync file
+# Synced by tree-city-site/scripts/sync-repos.ts
+
+app: pdfpages
+tasks:
+  - title: Verify paywall fixes on physical iPad
+    category: development
+    priority: high
+    status: pending
+    source: dev
+  - title: Take iPad verification screenshots
+    category: submission
+    priority: high
+    status: pending
+    source: dev
+  - title: Resubmit app via ASC web UI
+    category: submission
+    priority: urgent
+    status: pending
+    source: dev
+  - title: Create social media launch posts
+    category: distribution
+    priority: medium
+    status: pending
+    source: auto-submission
+  - title: Write launch blog post for treecitydbr.com
+    category: distribution
+    priority: medium
+    status: pending
+    source: auto-submission
+  - title: Prepare App Store review response if needed
+    category: review-response
+    priority: medium
+    status: pending
+    source: auto-submission
+  - title: Set up landing page SEO and metadata
+    category: distribution
+    priority: high
+    status: pending
+    source: auto-submission
+  - title: Set up RevenueCat project and API keys
+    category: operations
+    priority: high
+    status: pending
+    source: auto-submission
+  - title: Monitor App Store review status
+    category: operations
+    priority: high
+    status: pending
+    source: auto-submission
+  - title: Write launch blog post for PDFPages
+    category: distribution
+    priority: medium
+    status: pending
+    source: marketing
+  - title: Create 4 derivative posts for Voice PDF Extractor launch post
+    category: distribution
+    priority: low
+    status: pending
+    source: marketing
+  - title: Deploy ASO keyword + subtitle + description updates to ASC
+    category: distribution
+    priority: high
+    status: pending
+    source: marketing
+    description: >-
+      ASO audit findings from 2026-02-22. Apply all changes in ASC:
+
+
+      SUBTITLE: Change from "Speak to Extract and Save" (25 chars) to "Split, Reorder & Trim Pages" (29 chars).
+
+
+      KEYWORDS: Change from 67 chars (33 WASTED) to:
+
+      pages,split,splitter,reorder,crop,trim,delete,remove,select,separator,viewer,secure,offline,tool,organize,cutter
+
+      (98 chars, 18+ compound phrases)
+
+
+      Key changes: Remove 3 words already in app name (pdf, extract, voice). Remove misleading "merge" (app does not
+      merge). Remove unwinnable "editor". Add action verbs for page manipulation.
+
+
+      DESCRIPTION FIRST 3 LINES: Lead with "The fastest way to split, extract, and reorder PDF pages." then describe
+      thumbnail grid + voice commands + privacy.
+
+
+      VERIFY: Remove "merge" — app does not merge PDFs.
+  - title: 1.0.1 metadata update — bump version, archive, upload build to ASC
+    category: submission
+    priority: high
+    status: pending
+    source: manual
+    description: >-
+      Metadata-only update. Version bump in project, archive, upload to ASC, attach build to 1.0.1 version (1439dd00),
+      submit for review.
+  - title: Fix broken launch post MDX — pdfpages
+    category: distribution
+    priority: medium
+    status: pending
+    source: marketing
+  - title: "Repurpose: Stop Retyping PDFs (Voice PDF Extractor)"
+    category: distribution
+    priority: high
+    status: pending
+    source: marketing
