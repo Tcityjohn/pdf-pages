@@ -104,3 +104,58 @@ tasks:
     priority: high
     status: pending
     source: marketing
+  - title: Generate character micro-content for pdfpages
+    category: distribution
+    priority: medium
+    status: pending
+    source: marketing
+  - title: Build brand kit for PDFPages
+    category: distribution
+    priority: medium
+    status: pending
+    source: marketing
+  - title: Fix missing frontmatter in pdfpages blog post
+    category: development
+    priority: medium
+    status: pending
+    source: site-agent
+  - title: Fix missing frontmatter in pdfpages blog post
+    category: development
+    priority: medium
+    status: pending
+    source: site-agent
+  - title: Fix missing frontmatter in pdfpages launch.mdx blog post
+    category: design
+    priority: medium
+    status: shelved
+    source: site-agent
+
+# ── SUPABASE KEY ROTATION REBUILD (added 2026-05-14) ──────────────────────
+# This block is portfolio-wide. Identical entry exists in REPO-STATUS.yml
+# for every native app affected by the 2026-05-14 Supabase key rotation.
+supabase_key_rotation_rebuild:
+  status: pending
+  created: 2026-05-14
+  context: >-
+    The Supabase legacy JWT API keys (anon + service_role) were disabled
+    2026-05-14 after a leaked service_role key was discovered on local
+    disk. Source has been updated to use the modern publishable key
+    (sb_publishable_*). However, the SHIPPED App Store binary still has
+    the OLD legacy anon key compiled in — analytics writes from existing
+    installs fail HTTP 401. The app still FUNCTIONS for users (analytics
+    is a silent code path); only telemetry is broken. Low urgency given
+    2-user installed base.
+  action_needed:
+    - "Rebuild app from current source (publishable key already in code)"
+    - "Upload to App Store Connect / TestFlight"
+    - "Ship to users (App Store review or TestFlight)"
+  on_completion: >-
+    Call librarian_note(type:"status_change", project:"<this-repo-name>",
+    note:"Supabase key rotation rebuild shipped — version X.Y build N on
+    YYYY-MM-DD. Existing installs now use publishable key.") so the
+    portfolio-wide tracking note gets updated. Then remove this block
+    from REPO-STATUS.yml.
+  librarian_reference: >-
+    See vault note Synthesis/System/Portfolio Status.md — entry titled
+    "PORTFOLIO-WIDE TRACKING — Supabase key rotation rebuild status"
+    (decision note recorded 2026-05-14).
